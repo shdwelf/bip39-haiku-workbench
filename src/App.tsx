@@ -3,6 +3,7 @@ import { DEFAULT_SETTINGS, EnsoSettings, encodeEnsoId } from "./lib/enso";
 import EnsoForge from "./components/EnsoForge";
 import HaikuWallet from "./components/HaikuWallet";
 import MnemonicInspector from "./components/MnemonicInspector";
+import MonkeyMiner from "./components/MonkeyMiner";
 import Terminal from "./components/Terminal";
 import WavesExchange from "./components/WavesExchange";
 import MarketData from "./components/MarketData";
@@ -13,6 +14,7 @@ const TABS = [
   { id: "enso", label: "Ensō Forge", icon: "⭕" },
   { id: "wallet", label: "Haiku Wallet", icon: "🪙" },
   { id: "inspector", label: "Inspector", icon: "🔍" },
+  { id: "monkey", label: "MonKey Miner", icon: "🐒" },
   { id: "terminal", label: "Terminal / IRC", icon: "▌" },
   { id: "waves", label: "wAves Exchange", icon: "🌊" },
   { id: "market", label: "Market Data", icon: "📈" },
@@ -64,6 +66,7 @@ function Workbench() {
         )}
         {activeTab === "wallet" && <HaikuWallet ensoId={ensoId} />}
         {activeTab === "inspector" && <MnemonicInspector />}
+        {activeTab === "monkey" && <MonkeyMiner />}
         {activeTab === "terminal" && <Terminal />}
         {activeTab === "waves" && <WavesExchange />}
         {activeTab === "market" && <MarketData />}

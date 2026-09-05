@@ -34,6 +34,7 @@ and repairing the inbox on the way — is what this repo does.
 | **Ensō Forge** | Parameterised ensō brushstroke; its packed *Ensō ID* doubles as the vault password. |
 | **Haiku Wallet** | Mines 128-bit mnemonics until the 12 words partition into 5-7-5, derives `m/44'/0'/0'/0/0`, stores them in an AES-256 vault. |
 | **Inspector** | Validates a phrase's BIP-39 checksum, shows its syllable/5-7-5 breakdown, derives address + xpub. |
+| **MonKey Miner** | Mines Banano wallets for rare monKey accessories, fully offline. |
 | Terminal / wAves / Market | Carried over from the original build. |
 
 ## The piped inbox
@@ -107,6 +108,10 @@ over the dev server's origin rather than `file://`:
 | `/apps/` | Index, with a live secure-context / microphone check |
 | `/apps/anc-studio/` | ANC Studio Ultra — adaptive multi-band FxLMS over AudioWorklet |
 | `/apps/cyberchef/` | CyberChef Renovated Kitchen — 336 recipes, plus file input and save |
+| `/apps/cryptofountain-bbs/` | CryptoFountain BBS — P2P microblogging with erasure codes |
+
+The BBS shipped with a Cloudflare Insights beacon; it has been stripped so the
+page is fully self-contained and makes no external requests.
 
 ### Why serving them matters
 
@@ -140,6 +145,33 @@ via `binStrFromBytes` / `bytesFromBinStr`. Verified on a 4096-byte adversarial
 payload including NULs and `0xFF`: the output equals Node's
 `Buffer.toString("base64")` exactly, while the old UTF-8 path does not.
 
+## MonKey Miner (offline)
+
+The `🐒 MonKey Miner` tab generates real Banano wallets (`bananocurrency-web`)
+and keeps the ones whose monKey wears the accessories you're hunting.
+
+The original build called `monkey.banano.cc/api/v1/monkey/dtl/<address>` for every
+candidate, so it needed the network, was rate-limited, and produced no cards at
+all offline. Accessories are now derived **locally from the address**, the same
+way the real service derives them deterministically:
+
+- For each category, the category is present with probability `CATEGORY_ODDS`.
+- If present, one item is drawn with probability `weight / CATEGORY_TOTAL`.
+- The catalog lists only notable accessories, so the leftover weight forms a
+  "plain" bucket for the unlisted common items — without it every listed
+  accessory would be far too common.
+
+That makes the observed frequency equal `probability(a)` from the real appditto
+weights, so hunting a Flamethrower (1 in 941, Epic) is exactly as hard as on the
+live service. `test/monkey-stats.test.ts` mines 300,000 addresses and asserts
+every accessory in the catalog lands inside a 4-sigma binomial window.
+
+Artwork is drawn locally as SVG from the same address hash and shows the
+accessories that address actually rolled. **It is not the official MonKey art** —
+those assets are not bundled — but it is deterministic and reflects the roll.
+
+Keys are generated in the browser. Treat them as toys, not wallets.
+
 ## Layout
 
 ```
@@ -151,10 +183,15 @@ src/
     PipeInbox.tsx          floating inbox drawer
     PipeProvider.test.tsx  14 regression tests
   lib/
+    monkey/                accessory catalog + offline deterministic generation
     wallet.ts              BIP-39/44, 5-7-5 partitioning, mining, AES vault
     syllables.ts           heuristic syllable counter
     enso.ts, rng.ts        ensō rendering + seeded RNG
   components/              tool tabs
+test/
+  monkey-stats.test.ts     300k-sample rarity distribution check
+  monkey-miner.test.ts     address generation + end-to-end mining
+public/apps/               recovered HTML5 apps, served over HTTPS
 ```
 
 ## Security
