@@ -270,6 +270,55 @@ inlined as a data URI, there is a linked table of contents, print CSS breaks
 pages at chapters, and the file contains no scripts and no external references.
 It opens from a USB stick in fifty years' time.
 
+### Recovering the original vault
+
+`greeran-book.html` kept drafts in `localStorage` under
+**`greeran-book-vault-v1`** (styles under `greeran-book-style-v1`), and its own
+text says so: *"Files live only in this browser until exported."* It was never
+committed to any repo.
+
+`localStorage` is keyed by **origin**, which is usually why the vault looks
+empty: a vault written at `file:///…/greeran-book.html` is invisible from
+`https://…github.io/…`. Nothing is lost — it is another origin's storage.
+
+Open the book from the origin you wrote on, press its **Export vault** button
+(or `copy(localStorage.getItem('greeran-book-vault-v1'))` in the console), then
+use **Import & serve → Import vault JSON**. The export is
+`{ version, files: { "/chapters/00-premise.md": "…" } }`; each entry is filed
+under `/vault` at its original path, and re-importing skips what is already
+there.
+
+### Genealogy as attachments
+
+**File the research documents** puts the Seize Quartiers, family tree, military
+service map and bibliography under `/genealogy` and adds a chapter that cites
+each with `[[file:…]]` rather than reprinting it — the book's own distinction
+between a claim and the evidence behind it.
+
+### Serving the filesystem — micro_httpd as a Service Worker
+
+`public/book-sw.js` is a port of ACME Labs' `micro_httpd`
+(BSD-2-Clause, © 1999–2005 Jef Poskanzer; notice retained in the file). With it
+running, attachments get real URLs under `/book-fs/…` instead of temporary
+`blob:` handles, so they can be linked, framed and bookmarked.
+
+Carried over feature for feature:
+
+| micro_httpd | here |
+| --- | --- |
+| security against `..` snooping | paths containing `..` are refused, not resolved — after percent-decoding, and NUL bytes rejected too |
+| the common MIME types | `figure_mime()`'s table, with the entry's own type preferred |
+| trailing-slash redirection | a directory without `/` returns 301 |
+| `index.html` | served in preference to a listing |
+| directory listings | generated, with sizes and captions |
+
+**What could not be ported.** micro_httpd runs from `inetd` and owns a socket; a
+page cannot bind one. A Service Worker also does *not* create a secure origin —
+it **requires** one, and refuses to register on `file://`. That is the same
+constraint that stops the microphone prompting there. What it does give you is a
+real HTTP surface over the embedded filesystem on whatever secure origin is
+already hosting the book.
+
 ### The cookbook
 
 The Crypto Cookbook is served at `/apps/cookbook/` and framed by the
@@ -316,6 +365,7 @@ src/
     PipeProvider.test.tsx  14 regression tests
   lib/
     vfs.ts                 content-addressed IndexedDB filesystem for the book
+    bookImport.ts          vault recovery, genealogy filing, server control
     monkey/                accessory catalog + offline deterministic generation
     wallet.ts              BIP-39/44, 5-7-5 partitioning, mining, AES vault
     syllables.ts           heuristic syllable counter
@@ -324,9 +374,12 @@ src/
 test/
   vfs.test.ts              filesystem: dedupe, refcounted delete, persistence
   book.test.ts             chapter rendering, escaping, single-file export
+  book-import.test.ts      vault recovery, genealogy citations, micro_httpd paths
   monkey-stats.test.ts     300k-sample rarity distribution check
   monkey-miner.test.ts     address generation + end-to-end mining
 public/apps/               recovered HTML5 apps, served over HTTPS
+public/genealogy/          research documents filed as book attachments
+public/book-sw.js          micro_httpd ported to a Service Worker
 ```
 
 ## Security

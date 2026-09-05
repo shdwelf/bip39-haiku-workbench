@@ -1,0 +1,1506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Greeran Family Tree — Complete Research Database</title>
+<style>
+/* ═══════════════════════════════════ RESET & BASE ═══════════════════════════════════ */
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --gold:#C9A84C;--gold2:#f0d070;--dark-gold:#7a5a10;
+  --navy:#060e1e;--navy2:#0d1a2e;--navy3:#142238;
+  --crimson:#8B1A1A;--forest:#0d2010;
+  --parch:#F5EDD8;--parch2:#FAF4E8;
+  --border:rgba(201,168,76,.28);--border2:rgba(201,168,76,.5);
+  --text:#e8dcc8;--muted:#7a8a9a;--dim:#3a4a5a;
+  --green:#00cc66;--blue:#4499ff;--red:#ff5555;--orange:#ff8844;
+  --sidebar-w:340px;--header-h:56px;
+}
+html,body{height:100%;overflow:hidden;font-family:'Georgia',serif;
+  background:var(--navy);color:var(--text);font-size:14px}
+
+/* ═══════════════════════════════════ HEADER ═══════════════════════════════════ */
+#header{position:fixed;top:0;left:0;right:0;height:var(--header-h);z-index:200;
+  background:linear-gradient(135deg,#04080f 0%,#0d1a2e 60%,#12100a 100%);
+  border-bottom:2px solid var(--gold);display:flex;align-items:center;
+  padding:0 16px;gap:14px;box-shadow:0 4px 20px rgba(0,0,0,.7)}
+#header-logo{font-size:1.3rem;color:var(--gold);flex-shrink:0}
+#header-title{font-size:.95rem;font-weight:700;letter-spacing:.04em;
+  background:linear-gradient(90deg,var(--gold),var(--gold2),var(--gold));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  white-space:nowrap}
+#header-sub{font-size:.6rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;
+  white-space:nowrap;display:none}
+@media(min-width:700px){#header-sub{display:block}}
+#header-stats{display:flex;gap:10px;margin-left:auto;flex-shrink:0}
+.hstat{text-align:center;min-width:44px}
+.hstat-v{font-size:.95rem;font-weight:700;color:var(--gold);line-height:1}
+.hstat-l{font-size:.5rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+#search-wrap{position:relative;flex-shrink:0}
+#search{background:rgba(255,255,255,.06);border:1px solid var(--border);
+  border-radius:20px;padding:5px 30px 5px 12px;color:var(--text);
+  font-size:.72rem;width:180px;outline:none;transition:.2s}
+#search:focus{border-color:var(--border2);background:rgba(255,255,255,.1);width:220px}
+#search::placeholder{color:var(--dim)}
+#search-icon{position:absolute;right:10px;top:50%;transform:translateY(-50%);
+  color:var(--muted);font-size:.7rem;pointer-events:none}
+#search-drop{position:absolute;top:calc(100% + 4px);right:0;width:260px;
+  background:#0d1a2e;border:1px solid var(--border);border-radius:8px;
+  max-height:280px;overflow-y:auto;display:none;z-index:999}
+.sdrop-item{padding:8px 12px;font-size:.7rem;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.04)}
+.sdrop-item:hover{background:rgba(201,168,76,.12);color:var(--gold)}
+.sdrop-name{color:var(--parch);font-weight:600}
+.sdrop-sub{color:var(--muted);font-size:.6rem;margin-top:1px}
+.sdrop-badge{font-size:.55rem;padding:1px 5px;border-radius:8px;margin-left:4px}
+
+/* ═══════════════════════════════════ LAYOUT ═══════════════════════════════════ */
+#app{position:fixed;top:var(--header-h);left:0;right:0;bottom:0;display:flex;overflow:hidden}
+
+/* ═══════════════════════════════════ LEFT SIDEBAR ═══════════════════════════════════ */
+#sidebar-left{width:var(--sidebar-w);height:100%;display:flex;flex-direction:column;
+  background:var(--navy2);border-right:1px solid var(--border);
+  flex-shrink:0;transition:width .3s ease,opacity .3s ease;overflow:hidden;position:relative;z-index:100}
+#sidebar-left.collapsed{width:0;opacity:0}
+#sl-header{padding:10px 14px;border-bottom:1px solid var(--border);
+  background:rgba(201,168,76,.07);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+#sl-title{font-size:.72rem;color:var(--gold);font-weight:700;letter-spacing:.1em;text-transform:uppercase}
+#sl-body{flex:1;overflow-y:auto;padding:10px}
+
+/* ═══════════════════════════════════ MAIN CANVAS ═══════════════════════════════════ */
+#main{flex:1;overflow:auto;padding:16px;position:relative}
+
+/* ═══════════════════════════════════ RIGHT SIDEBAR ═══════════════════════════════════ */
+#sidebar-right{width:var(--sidebar-w);height:100%;display:flex;flex-direction:column;
+  background:var(--navy2);border-left:1px solid var(--border);
+  flex-shrink:0;transition:width .3s ease,opacity .3s ease;overflow:hidden;position:relative;z-index:100}
+#sidebar-right.collapsed{width:0;opacity:0}
+#sr-header{padding:10px 14px;border-bottom:1px solid var(--border);
+  background:rgba(201,168,76,.07);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+#sr-title{font-size:.72rem;color:var(--gold);font-weight:700;letter-spacing:.1em;text-transform:uppercase}
+#sr-body{flex:1;overflow-y:auto;padding:10px}
+
+/* ═══════════════════════════════════ TOGGLE BUTTONS ═══════════════════════════════════ */
+.sidebar-toggle{background:rgba(201,168,76,.15);border:1px solid var(--border);
+  color:var(--gold);padding:3px 8px;border-radius:4px;font-size:.65rem;cursor:pointer;
+  transition:.2s;flex-shrink:0;white-space:nowrap}
+.sidebar-toggle:hover{background:rgba(201,168,76,.3)}
+#btn-left{position:fixed;left:0;top:calc(var(--header-h) + 8px);z-index:150;
+  background:var(--navy2);border:1px solid var(--border);border-left:none;
+  border-radius:0 6px 6px 0;color:var(--gold);padding:6px 8px;cursor:pointer;
+  font-size:.7rem;transition:.3s;writing-mode:vertical-lr}
+#btn-right{position:fixed;right:0;top:calc(var(--header-h) + 8px);z-index:150;
+  background:var(--navy2);border:1px solid var(--border);border-right:none;
+  border-radius:6px 0 0 6px;color:var(--gold);padding:6px 8px;cursor:pointer;
+  font-size:.7rem;transition:.3s;writing-mode:vertical-lr}
+
+/* ═══════════════════════════════════ ACCORDION ═══════════════════════════════════ */
+.accordion{margin-bottom:6px;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.acc-head{padding:9px 12px;background:rgba(255,255,255,.04);cursor:pointer;
+  display:flex;align-items:center;justify-content:space-between;user-select:none;
+  transition:background .15s}
+.acc-head:hover{background:rgba(201,168,76,.1)}
+.acc-head-title{font-size:.72rem;font-weight:700;color:var(--parch);display:flex;align-items:center;gap:7px}
+.acc-head-arrow{font-size:.65rem;color:var(--gold);transition:transform .25s;flex-shrink:0}
+.acc-head.open .acc-head-arrow{transform:rotate(180deg)}
+.acc-body{max-height:0;overflow:hidden;transition:max-height .3s ease}
+.acc-body.open{max-height:2000px}
+.acc-inner{padding:10px 12px}
+
+/* ═══════════════════════════════════ PERSON CARDS ═══════════════════════════════════ */
+.pcard{background:rgba(255,255,255,.04);border:1px solid var(--border);
+  border-radius:8px;padding:10px 12px;margin-bottom:8px;cursor:pointer;
+  transition:.2s;position:relative}
+.pcard:hover{background:rgba(201,168,76,.08);border-color:var(--border2);transform:translateY(-1px)}
+.pcard.selected{border-color:var(--gold);background:rgba(201,168,76,.12);
+  box-shadow:0 0 12px rgba(201,168,76,.2)}
+.pcard.new-found{border-left:3px solid var(--green)}
+.pcard.corrected{border-left:3px solid var(--blue)}
+.pcard.military{border-left:3px solid var(--orange)}
+.pcard.deceased{opacity:.85}
+.pc-name{font-size:.78rem;font-weight:700;color:#f0e0c0;margin-bottom:2px;line-height:1.3}
+.pc-name .surn{color:var(--gold)}
+.pc-dates{font-size:.62rem;color:var(--muted);line-height:1.6}
+.pc-dates b{color:#b0c0d0}
+.pc-badges{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:5px}
+.badge{font-size:.55rem;padding:2px 6px;border-radius:8px;font-weight:700;letter-spacing:.04em}
+.b-new{background:rgba(0,204,102,.2);color:var(--green);border:1px solid rgba(0,204,102,.4)}
+.b-cor{background:rgba(68,153,255,.2);color:var(--blue);border:1px solid rgba(68,153,255,.4)}
+.b-mil{background:rgba(255,136,68,.2);color:var(--orange);border:1px solid rgba(255,136,68,.4)}
+.b-dec{background:rgba(255,85,85,.15);color:#ff8888;border:1px solid rgba(255,85,85,.3)}
+.b-gen{background:rgba(201,168,76,.15);color:var(--gold);border:1px solid var(--border)}
+.pc-source{font-size:.58rem;color:var(--dim);font-style:italic;margin-top:4px}
+
+/* ═══════════════════════════════════ MAIN TREE AREA ═══════════════════════════════════ */
+.gen-wrap{margin-bottom:24px}
+.gen-label-row{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.gen-label{font-size:.65rem;color:var(--gold);letter-spacing:.15em;text-transform:uppercase;
+  padding:3px 14px;background:rgba(201,168,76,.1);border:1px solid var(--border);
+  border-radius:20px;white-space:nowrap}
+.gen-rule{flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);opacity:.25}
+.couples-wrap{display:flex;flex-wrap:wrap;gap:14px;justify-content:flex-start;align-items:flex-start}
+
+/* couple unit */
+.couple-unit{display:flex;flex-direction:column;align-items:center;gap:0}
+.couple-pair{display:flex;align-items:stretch;gap:0;
+  background:rgba(0,0,0,.25);border:1.5px solid var(--border);border-radius:10px;
+  overflow:hidden;position:relative;cursor:pointer;transition:.2s}
+.couple-pair:hover{border-color:var(--border2);box-shadow:0 4px 18px rgba(0,0,0,.5)}
+.couple-pair.selected-couple{border-color:var(--gold);box-shadow:0 0 16px rgba(201,168,76,.3)}
+.couple-sep{width:1.5px;background:linear-gradient(to bottom,transparent,var(--gold),transparent);
+  opacity:.5;flex-shrink:0;align-self:stretch}
+.marr-bar{background:linear-gradient(90deg,var(--dark-gold),var(--gold),var(--dark-gold));
+  color:#000;font-size:.55rem;font-weight:700;letter-spacing:.06em;text-align:center;
+  padding:2px 8px;border-radius:0 0 8px 8px;margin-top:-1px}
+
+/* person in tree */
+.tree-person{padding:9px 11px;min-width:140px;max-width:175px;
+  display:flex;flex-direction:column;gap:2px;transition:.15s}
+.tree-person:hover{background:rgba(201,168,76,.06)}
+.tp-shield{width:38px;height:46px;margin-bottom:4px;flex-shrink:0;
+  filter:drop-shadow(0 2px 4px rgba(0,0,0,.4));transition:.2s}
+.tree-person:hover .tp-shield{filter:drop-shadow(0 0 8px rgba(201,168,76,.5))}
+.tp-name{font-size:.68rem;font-weight:700;color:#e8d8b8;line-height:1.3}
+.tp-surn{color:var(--gold);display:block;font-size:.72rem}
+.tp-dates{font-size:.57rem;color:var(--muted);line-height:1.5}
+.tp-place{font-size:.54rem;color:var(--dim);font-style:italic}
+.tp-badges{display:flex;flex-wrap:wrap;gap:2px;margin-top:2px}
+
+/* connector lines */
+.conn-v{width:2px;background:linear-gradient(to bottom,var(--gold),rgba(201,168,76,.3));
+  margin:0 auto;opacity:.6}
+.conn-h-wrap{position:relative;display:flex;justify-content:center;width:100%}
+
+/* ═══════════════════════════════════ DETAIL PANEL ═══════════════════════════════════ */
+#detail-panel{background:var(--navy3);border-radius:10px;border:1px solid var(--border);
+  margin-bottom:16px;overflow:hidden}
+#dp-head{padding:10px 14px;background:rgba(201,168,76,.08);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between}
+#dp-name{font-size:.9rem;color:var(--gold);font-weight:700}
+#dp-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:1rem;padding:2px 6px}
+#dp-close:hover{color:var(--gold)}
+#dp-body{padding:14px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:600px){#dp-body{grid-template-columns:1fr}}
+.dp-section{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);
+  border-radius:6px;padding:10px 12px}
+.dp-section-title{font-size:.6rem;color:var(--gold);text-transform:uppercase;
+  letter-spacing:.1em;margin-bottom:7px;font-weight:700}
+.dp-row{font-size:.68rem;color:#a0b0c0;line-height:1.7;display:flex;gap:6px}
+.dp-label{color:var(--muted);min-width:70px;flex-shrink:0;font-size:.62rem}
+.dp-val{color:var(--parch)}
+.dp-source{font-size:.6rem;color:var(--dim);font-style:italic;margin-top:6px;
+  border-top:1px solid rgba(255,255,255,.05);padding-top:5px}
+#detail-panel.hidden{display:none}
+
+/* ═══════════════════════════════════ FINDINGS STRIP ═══════════════════════════════════ */
+.finding{border-left:3px solid var(--gold);background:rgba(201,168,76,.06);
+  border-radius:0 6px 6px 0;padding:8px 11px;margin-bottom:7px;font-size:.67rem;
+  line-height:1.5;color:#9abaaa}
+.finding.new{border-left-color:var(--green);background:rgba(0,204,102,.05);color:#8ac89a}
+.finding.corrected{border-left-color:var(--blue);background:rgba(68,153,255,.05);color:#8aaac8}
+.finding.military{border-left-color:var(--orange);background:rgba(255,136,68,.05);color:#c8a87a}
+.finding.critical{border-left-color:var(--red);background:rgba(255,85,85,.05);color:#c88888}
+.finding b{color:#e0d0b0}
+.finding-src{font-size:.56rem;color:var(--dim);font-style:italic;margin-top:4px}
+
+/* ═══════════════════════════════════ RESEARCH STEPS ═══════════════════════════════════ */
+.step{display:flex;gap:9px;align-items:flex-start;margin-bottom:9px}
+.step-n{background:var(--gold);color:#000;border-radius:50%;width:20px;height:20px;
+  display:flex;align-items:center;justify-content:center;font-size:.62rem;
+  font-weight:700;flex-shrink:0;margin-top:1px}
+.step-t{font-size:.67rem;color:#9aaabb;line-height:1.5}
+.step-t b{color:#d0c0a0}
+.step-t a{color:var(--gold);text-decoration:none}
+.step-t a:hover{text-decoration:underline}
+
+/* ═══════════════════════════════════ TABS ═══════════════════════════════════ */
+.tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:10px;flex-wrap:wrap}
+.tab{padding:6px 12px;font-size:.67rem;color:var(--muted);cursor:pointer;
+  border-bottom:2px solid transparent;transition:.15s;white-space:nowrap}
+.tab:hover{color:var(--gold)}
+.tab.active{color:var(--gold);border-bottom-color:var(--gold)}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+
+/* ═══════════════════════════════════ CORRECTIONS TABLE ═══════════════════════════════════ */
+.ctable{width:100%;border-collapse:collapse;font-size:.64rem}
+.ctable th{background:rgba(201,168,76,.1);color:var(--gold);padding:6px 9px;
+  text-align:left;border-bottom:1px solid var(--border);white-space:nowrap}
+.ctable td{padding:6px 9px;border-bottom:1px solid rgba(255,255,255,.04);color:#a0b0c0;vertical-align:top}
+.ctable tr:hover td{background:rgba(255,255,255,.02)}
+.td-old{color:#aa5555;text-decoration:line-through;font-style:italic}
+.td-new{color:var(--green);font-weight:700}
+.td-src{font-size:.56rem;color:var(--dim);font-style:italic}
+.td-name{color:#e0d0b8;font-weight:600}
+
+/* ═══════════════════════════════════ SECTION TITLES ═══════════════════════════════════ */
+.stitle{font-size:.78rem;color:var(--gold);font-variant:small-caps;letter-spacing:.08em;
+  border-bottom:1px solid var(--border);padding-bottom:6px;margin:14px 0 10px;
+  display:flex;align-items:center;gap:8px}
+
+/* ═══════════════════════════════════ ALERT ═══════════════════════════════════ */
+.alert{border-radius:7px;padding:10px 14px;margin-bottom:12px;font-size:.68rem;line-height:1.6}
+.alert-red{background:rgba(200,30,30,.1);border:1px solid rgba(200,30,30,.35);color:#ffaaaa}
+.alert-gold{background:rgba(201,168,76,.08);border:1px solid var(--border);color:#d8c898}
+.alert-green{background:rgba(30,160,80,.1);border:1px solid rgba(30,160,80,.35);color:#aaffcc}
+.alert b{font-weight:700}
+
+/* ═══════════════════════════════════ SUMMARY STATS ═══════════════════════════════════ */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));gap:8px;margin-bottom:14px}
+.sbox{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:7px;
+  padding:10px 8px;text-align:center}
+.sbox-v{font-size:1.3rem;font-weight:700;color:var(--gold);line-height:1}
+.sbox-v.green{color:var(--green)}
+.sbox-v.blue{color:var(--blue)}
+.sbox-v.red{color:var(--red)}
+.sbox-l{font-size:.52rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-top:3px}
+
+/* ═══════════════════════════════════ SCROLLBARS ═══════════════════════════════════ */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:rgba(255,255,255,.03)}
+::-webkit-scrollbar-thumb{background:rgba(201,168,76,.3);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:rgba(201,168,76,.5)}
+
+/* ═══════════════════════════════════ MOBILE ═══════════════════════════════════ */
+@media(max-width:700px){
+  :root{--sidebar-w:100%;--header-h:48px}
+  #sidebar-left,#sidebar-right{position:fixed;top:var(--header-h);bottom:0;z-index:90;
+    width:88vw!important;box-shadow:4px 0 20px rgba(0,0,0,.7)}
+  #sidebar-left{left:0}
+  #sidebar-right{right:0}
+  #sidebar-left.collapsed{width:0!important;opacity:0}
+  #sidebar-right.collapsed{width:0!important;opacity:0}
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════ HEADER ══════════════════════════════════════ -->
+<div id="header">
+  <div id="header-logo">⚜</div>
+  <div>
+    <div id="header-title">Greeran Family Tree — Complete Research Database</div>
+    <div id="header-sub">Ireland · New York · California · Kansas · Ohio · Pennsylvania · Arkansas</div>
+  </div>
+  <div id="header-stats">
+    <div class="hstat"><div class="hstat-v">2073</div><div class="hstat-l">People</div></div>
+    <div class="hstat"><div class="hstat-v" style="color:var(--green)">31</div><div class="hstat-l">New Found</div></div>
+    <div class="hstat"><div class="hstat-v" style="color:var(--blue)">24</div><div class="hstat-l">Corrected</div></div>
+    <div class="hstat"><div class="hstat-v" style="color:var(--orange)">6</div><div class="hstat-l">Military</div></div>
+  </div>
+  <div id="search-wrap">
+    <input id="search" type="text" placeholder="Search name or place…" autocomplete="off">
+    <div id="search-icon">🔍</div>
+    <div id="search-drop"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════ TOGGLE BUTTONS ══════════════════════════════════════ -->
+<button id="btn-left" onclick="toggleSidebar('left')" title="Toggle Family Lines">◀ Lines</button>
+<button id="btn-right" onclick="toggleSidebar('right')" title="Toggle Research">Research ▶</button>
+
+<!-- ══════════════════════════════════════ APP LAYOUT ══════════════════════════════════════ -->
+<div id="app">
+
+<!-- ══════════════════════════════ LEFT SIDEBAR — FAMILY LINES ══════════════════════════════ -->
+<div id="sidebar-left">
+  <div id="sl-header">
+    <div id="sl-title">📚 Family Lines</div>
+    <button class="sidebar-toggle" onclick="toggleSidebar('left')">✕ Close</button>
+  </div>
+  <div id="sl-body">
+
+    <!-- GREERAN LINE -->
+    <div class="accordion">
+      <div class="acc-head open" onclick="toggleAcc(this)">
+        <div class="acc-head-title">
+          <svg width="18" height="22" viewBox="0 0 52 62"><path d="M4,4 L48,4 L48,38 Q48,56 26,60 Q4,56 4,38 Z" fill="#1a2a5e" stroke="#C9A84C" stroke-width="2"/><line x1="26" y1="4" x2="26" y2="56" stroke="#C9A84C" stroke-width="1.2" opacity=".6"/><line x1="4" y1="28" x2="48" y2="28" stroke="#C9A84C" stroke-width="1.2" opacity=".6"/><text x="13" y="23" text-anchor="middle" fill="#C9A84C" font-size="12">♜</text><text x="39" y="23" text-anchor="middle" fill="white" font-size="10">✚</text><text x="13" y="46" text-anchor="middle" fill="white" font-size="11">☘</text><text x="39" y="46" text-anchor="middle" fill="#C9A84C" font-size="11">🦁</text></svg>
+          Greeran Line <span class="badge b-gen" style="margin-left:4px">21 members</span>
+        </div>
+        <span class="acc-head-arrow">▼</span>
+      </div>
+      <div class="acc-body open"><div class="acc-inner">
+        <div class="pcard military" onclick="showDetail('bernard-sr')">
+          <div class="pc-badges"><span class="badge b-cor">✦ Corrected</span></div>
+          <div class="pc-name">Bernard <span class="surn">Greeran</span> Sr.</div>
+          <div class="pc-dates"><b>b.</b> ~1861 · Co. Down, Ireland &nbsp;<b>d.</b> unknown</div>
+          <div class="pc-dates">Farmer Grocer · 16 children (15 died pre-1911)</div>
+        </div>
+        <div class="pcard" onclick="showDetail('mary-conalty')">
+          <div class="pc-badges"><span class="badge b-cor">✦ Corrected</span><span class="badge b-dec">†</span></div>
+          <div class="pc-name">Mary <span class="surn">Conalty</span> Greeran</div>
+          <div class="pc-dates"><b>b.</b> ~1859 · Co. Down, Ireland</div>
+          <div class="pc-dates">16 children born — 15 died in infancy/childhood</div>
+        </div>
+        <div class="pcard" onclick="showDetail('hugh')">
+          <div class="pc-badges"><span class="badge b-cor">✦ Corrected</span></div>
+          <div class="pc-name">Hugh <span class="surn">Greeran</span></div>
+          <div class="pc-dates"><b>b.</b> ~1897 · Ballymackilreiny, Moneyslane, Down &nbsp;<b>d.</b> New York</div>
+        </div>
+        <div class="pcard" onclick="showDetail('catherine-wife')">
+          <div class="pc-name">Catherine <span class="surn">Greeran</span></div>
+          <div class="pc-dates"><b>b.</b> ~1900 · Ireland</div>
+        </div>
+        <div style="margin:6px 0 4px;font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em">Hugh &amp; Catherine's Children</div>
+        <div class="pcard military" onclick="showDetail('bp')">
+          <div class="pc-badges"><span class="badge b-cor">✦ Corrected</span><span class="badge b-mil">🎖 USN WWII</span></div>
+          <div class="pc-name">Bernard Patrick <span class="surn">Greeran</span></div>
+          <div class="pc-dates"><b>b.</b> 21 Jun 1924 · Ballymacareney, Co. Down &nbsp;<b>d.</b> 3 Feb 2017 · Covina, CA</div>
+          <div class="pc-source">✓ Dignity Memorial obituary 2017</div>
+        </div>
+        <div class="pcard military" onclick="showDetail('james-t')">
+          <div class="pc-badges"><span class="badge b-new">✦ + Wife &amp; Son</span><span class="badge b-mil">🎖 USN WWII</span></div>
+          <div class="pc-name">James T. <span class="surn">Greeran</span></div>
+          <div class="pc-dates"><b>b.</b> 11 Jul 1925 · New York &nbsp;<b>d.</b> 21 Jun 2012</div>
+          <div class="pc-dates">Wife: Mary Ann · Son: Timothy</div>
+          <div class="pc-source">✓ Papavero Funeral Home 2012</div>
+        </div>
+        <div class="pcard" onclick="showDetail('john-j')">
+          <div class="pc-name">John J. <span class="surn">Greeran</span></div>
+          <div class="pc-dates"><b>b.</b> ~1929 · New York &nbsp;<b>d.</b> 6 Apr 1989</div>
+        </div>
+        <div class="pcard" onclick="showDetail('thomas-h')">
+          <div class="pc-name">Thomas Patrick <span class="surn">Greeran</span></div>
+          <div class="pc-dates"><b>b.</b> 27 Aug 1934 · New York &nbsp;<b>d.</b> 8 Oct 2005</div>
+        </div>
+        <div class="pcard" onclick="showDetail('kathleen-h')">
+          <div class="pc-name">Kathleen <span class="surn">Greeran</span> (Scott)</div>
+          <div class="pc-dates"><b>b.</b> ~1941 · New York · Married name: Scott</div>
+        </div>
+        <div style="margin:6px 0 4px;font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em">Bernard Patrick's Children</div>
+        <div class="pcard military" onclick="showDetail('michael-p')">
+          <div class="pc-badges"><span class="badge b-mil">🎖 CPL USMC Vietnam</span><span class="badge b-dec">†</span></div>
+          <div class="pc-name">Michael Patrick <span class="surn">Greeran</span></div>
+          <div class="pc-dates"><b>b.</b> 20 Feb 1947 · Queens, NY &nbsp;<b>d.</b> 21 Feb 2005</div>
+          <div class="pc-dates">Wife: Judy · Daughter: Michelle · 3 grandchildren</div>
+        </div>
+        <div class="pcard" onclick="showDetail('thomas-bp')">
+          <div class="pc-name">Thomas Patrick <span class="surn">Greeran</span></div>
+          <div class="pc-dates"><b>b.</b> 20 Feb 1947 &nbsp;<b>d.</b> 21 Feb 2005</div>
+          <div class="pc-dates">Wife: Judy Miller · Daughter: Linda Webber</div>
+        </div>
+        <div class="pcard" onclick="showDetail('gerard')">
+          <div class="pc-name">Gerard "Jerry" T. <span class="surn">Greeran</span></div>
+          <div class="pc-dates"><b>b.</b> ~1955 · Wife: Jeanie Belle Hewitt · Son: Steven</div>
+        </div>
+        <div class="pcard" onclick="showDetail('patricia')">
+          <div class="pc-name">Patricia <span class="surn">Greeran</span> Dunn</div>
+          <div class="pc-dates">Husband: Donald Ralph Dunn &nbsp;<b>d.</b> 30 Aug 2020</div>
+          <div class="pc-dates">Children: Nathan, Jordan, Lindsay, Lacey Dunn</div>
+        </div>
+        <div class="pcard new-found" onclick="showDetail('terry-miller')">
+          <div class="pc-badges"><span class="badge b-cor">✦ Name Corrected</span></div>
+          <div class="pc-name">Terry <span class="surn">Greeran</span> → Miller</div>
+          <div class="pc-dates">Married name: <b>Miller</b> confirmed via obituary</div>
+        </div>
+        <div class="pcard" onclick="showDetail('daniel')">
+          <div class="pc-badges"><span class="badge b-dec">† Confirmed deceased</span></div>
+          <div class="pc-name">Daniel Lee <span class="surn">Greeran</span></div>
+          <div class="pc-dates">Died before 3 Feb 2017 · Son of Bernard Patrick &amp; Jeanette</div>
+        </div>
+        <div style="margin:6px 0 4px;font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em">Generation V (Newly Found)</div>
+        <div class="pcard new-found" onclick="showDetail('timothy')">
+          <div class="pc-badges"><span class="badge b-new">✦ Newly Found</span></div>
+          <div class="pc-name">Timothy <span class="surn">Greeran</span></div>
+          <div class="pc-dates">Son of James T. &amp; Mary Ann Greeran</div>
+        </div>
+        <div class="pcard new-found" onclick="showDetail('mary-ann')">
+          <div class="pc-badges"><span class="badge b-new">✦ Newly Found</span></div>
+          <div class="pc-name">Mary Ann <span class="surn">Greeran</span></div>
+          <div class="pc-dates">Wife of James T. Greeran · Queens / Elmhurst NY</div>
+        </div>
+      </div></div>
+    </div><!-- /Greeran accordion -->
+
+    <!-- HEWITT LINE -->
+    <div class="accordion">
+      <div class="acc-head" onclick="toggleAcc(this)">
+        <div class="acc-head-title">
+          <svg width="18" height="22" viewBox="0 0 52 62"><path d="M4,4 L48,4 L48,38 Q48,56 26,60 Q4,56 4,38 Z" fill="#2a1a5e" stroke="#C9A84C" stroke-width="2"/><path d="M42,6 L6,54" stroke="#C9A84C" stroke-width="4" opacity=".4"/><text x="16" y="24" text-anchor="middle" fill="#C9A84C" font-size="13">🦅</text><text x="36" y="44" text-anchor="middle" fill="#C9A84C" font-size="13">🦅</text></svg>
+          Hewitt Line <span class="badge b-cor" style="margin-left:4px">9 members</span>
+        </div>
+        <span class="acc-head-arrow">▼</span>
+      </div>
+      <div class="acc-body"><div class="acc-inner">
+        <div class="pcard corrected" onclick="showDetail('maurice')">
+          <div class="pc-badges"><span class="badge b-cor">✦ Full name confirmed</span></div>
+          <div class="pc-name">Maurice Frederick <span class="surn">Hewitt</span></div>
+          <div class="pc-dates"><b>b.</b> 27 Mar 1913 · Stockton, CA &nbsp;<b>d.</b> 28 Feb 2007 · Duarte, CA</div>
+          <div class="pc-dates">Married Louise Frances Carey ~1939 · Married 66 years</div>
+        </div>
+        <div class="pcard corrected" onclick="showDetail('louise-hewitt')">
+          <div class="pc-badges"><span class="badge b-cor">✦ Birthplace corrected</span><span class="badge b-new">+ Obit details</span></div>
+          <div class="pc-name">Louise Frances <span class="surn">Carey</span> Hewitt</div>
+          <div class="pc-dates"><b>b.</b> 9 Apr 1923 · <b>Pasadena</b> (not "Los Angles L"), CA</div>
+          <div class="pc-dates"><b>d.</b> 27 Aug 2005 · Gladstone Rehab Hospital, Glendora</div>
+          <div class="pc-dates">Nurse's aide · PTA Pres · Humanitarian Award 1998</div>
+          <div class="pc-source">✓ SGV Tribune / Legacy.com obituary Sep 2005</div>
+        </div>
+        <div style="margin:6px 0 4px;font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em">Their 5 Children</div>
+        <div class="pcard" onclick="showDetail('terry-milwood')">
+          <div class="pc-badges"><span class="badge b-cor">Spelling: Milwood not Millwood</span></div>
+          <div class="pc-name">Terry Lee <span class="surn">Milwood</span></div>
+          <div class="pc-dates">Husband: <b>Gary Milwood</b> (confirmed from obit guestbook)</div>
+          <div class="pc-source">✓ Louise Hewitt obit guestbook "Gary and Terry"</div>
+        </div>
+        <div class="pcard corrected" onclick="showDetail('charles-hewitt')">
+          <div class="pc-badges"><span class="badge b-cor">✦ Middle name corrected</span></div>
+          <div class="pc-name">Charles <b>Frederick</b> <span class="surn">Hewitt</span></div>
+          <div class="pc-dates">Previously "Charles J Hewitt" — middle name is Frederick</div>
+          <div class="pc-dates">Wife: Lila Jean Crandall · Son: Randy Hewitt</div>
+          <div class="pc-dates">Guestbook signed: "Chuck &amp; Lila Hewitt"</div>
+        </div>
+        <div class="pcard" onclick="showDetail('linda-eiselein')">
+          <div class="pc-badges"><span class="badge b-cor">Full name: Linda Louise</span></div>
+          <div class="pc-name">Linda Louise <span class="surn">Eiselein</span></div>
+          <div class="pc-dates">Husband: James Eiselein Jr · Daughters: Kelee, Kristen</div>
+          <div class="pc-dates">Signed obit guestbook: "Linda and Jim"</div>
+        </div>
+        <div class="pcard" onclick="showDetail('jeanie-belle')">
+          <div class="pc-name">Jean Belle <span class="surn">Greeran</span></div>
+          <div class="pc-dates">Married Gerard T. Greeran · Lived Glendora, CA</div>
+          <div class="pc-dates">Guestbook confirms: "Jerry, Steven and Jeanie" worked together</div>
+        </div>
+        <div class="pcard corrected" onclick="showDetail('robert-hewitt')">
+          <div class="pc-badges"><span class="badge b-cor">Full name: Robert David</span></div>
+          <div class="pc-name">Robert <b>David</b> <span class="surn">Hewitt</span></div>
+          <div class="pc-dates">Previously "Robert Hewitt" — middle name David confirmed</div>
+          <div class="pc-source">✓ Louise Hewitt obituary SGV Tribune 2005</div>
+        </div>
+      </div></div>
+    </div><!-- /Hewitt -->
+
+    <!-- CAREY LINE -->
+    <div class="accordion">
+      <div class="acc-head" onclick="toggleAcc(this)">
+        <div class="acc-head-title">
+          <svg width="18" height="22" viewBox="0 0 52 62"><path d="M4,4 L48,4 L48,38 Q48,56 26,60 Q4,56 4,38 Z" fill="#5a3010" stroke="#C9A84C" stroke-width="2"/><text x="26" y="17" text-anchor="middle" fill="#C9A84C" font-size="9">★ ★ ★</text><line x1="8" y1="24" x2="44" y2="24" stroke="#C9A84C" stroke-width="1.2" opacity=".7"/><line x1="8" y1="32" x2="44" y2="32" stroke="#C9A84C" stroke-width="1.2" opacity=".7"/></svg>
+          Carey Line <span class="badge b-gen" style="margin-left:4px">17 members</span>
+        </div>
+        <span class="acc-head-arrow">▼</span>
+      </div>
+      <div class="acc-body"><div class="acc-inner">
+        <div class="pcard" onclick="showDetail('joel-carey')">
+          <div class="pc-name">Joel Thornburg <span class="surn">Carey</span></div>
+          <div class="pc-dates"><b>b.</b> 7 May 1832 · Carmel, Hamilton Co., Indiana &nbsp;<b>d.</b> 2 Apr 1915 · Indiana</div>
+          <div class="pc-dates">Farmer and Carpenter · Married Elizabeth Stanley 1854</div>
+        </div>
+        <div class="pcard" onclick="showDetail('elizabeth-stanley')">
+          <div class="pc-name">Elizabeth <span class="surn">Stanley</span> Carey</div>
+          <div class="pc-dates"><b>b.</b> ~29 Sep 1831/1832 · Indiana &nbsp;<b>d.</b> 11 Jan 1927</div>
+        </div>
+        <div style="margin:5px 0 3px;font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em">Their Children</div>
+        <div class="pcard" onclick="showDetail('luther-carey')">
+          <div class="pc-name">Luther G. <span class="surn">Carey</span></div>
+          <div class="pc-dates"><b>b.</b> 1867 · Indiana &nbsp;<b>d.</b> 1897 · Altadena, CA</div>
+          <div class="pc-dates">Married Millie Ruth (b.1868 IL) → son Francis Gray Carey</div>
+        </div>
+        <div class="pcard" onclick="showDetail('francis-carey')">
+          <div class="pc-badges"><span class="badge b-gen">Connects to Hewitt/Greeran</span></div>
+          <div class="pc-name">Francis Gray <span class="surn">Carey</span></div>
+          <div class="pc-dates"><b>b.</b> 4 Feb 1897 · Pasadena, CA &nbsp;<b>d.</b> 25 Jun 1976 · Rosemead, CA</div>
+          <div class="pc-dates">Father of Louise Frances Carey Hewitt</div>
+        </div>
+        <div class="pcard" onclick="showDetail('daisy-carey')">
+          <div class="pc-name">Daisy Beatrice <span class="surn">Carey</span></div>
+          <div class="pc-dates"><b>b.</b> 19 Sep 1904 · Texas &nbsp;<b>d.</b> 20 Jan 1989 · Monrovia, CA</div>
+          <div class="pc-dates">Wife of Francis Gray Carey</div>
+        </div>
+        <div class="pcard" onclick="showDetail('niley-carey')">
+          <div class="pc-name">Niley H. <span class="surn">Carey</span></div>
+          <div class="pc-dates"><b>b.</b> ~1864 · Indiana &nbsp;<b>d.</b> Santa Rosa, CA</div>
+          <div class="pc-dates">Married Irene Y. Carey · Sonoma, CA (1950 census)</div>
+        </div>
+        <div class="pcard" onclick="showDetail('george-carey')">
+          <div class="pc-name">George Stanley <span class="surn">Carey</span></div>
+          <div class="pc-dates"><b>b.</b> 30 Nov 1874 · Iowa &nbsp;<b>d.</b> 30 Apr 1936 · Manhattan, KS</div>
+          <div class="pc-dates">Married Annett Carey → children Evelyn, Georgia, Florence</div>
+        </div>
+        <div class="pcard" onclick="showDetail('mima-carey')">
+          <div class="pc-name">Mima <span class="surn">Carey</span> Dyer</div>
+          <div class="pc-dates"><b>b.</b> 1 Jan 1870 · Iowa &nbsp;<b>d.</b> 1959 · Riley, KS</div>
+          <div class="pc-dates">Married Samuel Dyer → son George C. Dyer; then second family</div>
+        </div>
+      </div></div>
+    </div><!-- /Carey -->
+
+    <!-- DUNN LINE -->
+    <div class="accordion">
+      <div class="acc-head" onclick="toggleAcc(this)">
+        <div class="acc-head-title">
+          <svg width="18" height="22" viewBox="0 0 52 62"><path d="M4,4 L48,4 L48,38 Q48,56 26,60 Q4,56 4,38 Z" fill="#1a3a1a" stroke="#C9A84C" stroke-width="2"/><path d="M10,10 L42,50 M42,10 L10,50" stroke="#C9A84C" stroke-width="2.5" opacity=".5"/></svg>
+          Dunn Line <span class="badge b-new" style="margin-left:4px">10+ new facts</span>
+        </div>
+        <span class="acc-head-arrow">▼</span>
+      </div>
+      <div class="acc-body"><div class="acc-inner">
+        <div class="pcard corrected" onclick="showDetail('ralph-dunn')">
+          <div class="pc-badges"><span class="badge b-mil">🎖 USN WWII</span><span class="badge b-new">+ Maiden name</span></div>
+          <div class="pc-name">Ralph <span class="surn">Dunn</span></div>
+          <div class="pc-dates"><b>b.</b> 14 Aug 1918 · Mounds, Pulaski Co., IL &nbsp;<b>d.</b> 13 Mar 2006 · Pasadena</div>
+          <div class="pc-dates">Grew up San Pedro CA · Graduated Muir Tech Pasadena</div>
+          <div class="pc-dates">US Steel hydraulics engineer · WWII Navy vet</div>
+          <div class="pc-source">✓ Pasadena Star News obituary Mar 22 2006</div>
+        </div>
+        <div class="pcard corrected" onclick="showDetail('dorothy-dunn')">
+          <div class="pc-badges"><span class="badge b-new">✦ Maiden name found!</span></div>
+          <div class="pc-name">Dorothy Louise <span class="surn">Holdredge</span> Dunn</div>
+          <div class="pc-dates"><b>Maiden name: HOLDREDGE</b> (previously unknown)</div>
+          <div class="pc-dates"><b>b.</b> ~1922 · California &nbsp;<b>d.</b> 27 Mar 2015</div>
+          <div class="pc-dates">Married Ralph Dunn ~1941 · celebrated 65th anniversary 2006</div>
+          <div class="pc-source">✓ Ralph Dunn obituary 2006 names "Dorothy Louise Holdredge"</div>
+        </div>
+        <div class="pcard" onclick="showDetail('carolyn-phillips')">
+          <div class="pc-badges"><span class="badge b-new">✦ Married name found</span></div>
+          <div class="pc-name">Carolyn L. <span class="surn">Dunn</span> → Phillips</div>
+          <div class="pc-dates">Husband: <b>Rick Phillips</b> · b. ~1944</div>
+          <div class="pc-dates">Children: Shelley (Coscarelli/Ken), David Phillips (Kristy)</div>
+          <div class="pc-source">✓ Ralph Dunn obituary 2006</div>
+        </div>
+        <div class="pcard corrected" onclick="showDetail('donald-dunn')">
+          <div class="pc-badges"><span class="badge b-cor">✦ Full data confirmed</span><span class="badge b-dec">† 2020</span></div>
+          <div class="pc-name">Donald Ralph <span class="surn">Dunn</span></div>
+          <div class="pc-dates"><b>b.</b> <b>4 Apr 1948</b> · Altadena, CA (exact!) &nbsp;<b>d.</b> <b>30 Aug 2020</b> · Downey, CA</div>
+          <div class="pc-dates">40+ yrs IT/healthcare · Wife: Patricia (Greeran) Dunn</div>
+          <div class="pc-dates">Children: Nathan/Mindy, Jordan/Ashley, Lindsey, Lacey/Timon</div>
+          <div class="pc-source">✓ Risher Mortuary obituary Sep 2020</div>
+        </div>
+        <div style="margin:6px 0 4px;font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em">Donald &amp; Patricia's Grandchildren (newly found)</div>
+        <div class="pcard new-found">
+          <div class="pc-name">7 Grandchildren <span class="surn">Dunn</span></div>
+          <div class="pc-dates">Caleb · Luke · Daniel · Grace · Hope · Isaiah · Andrew</div>
+          <div class="pc-dates"><b>Lacey Dunn</b> married <b>Timon Birkhofer</b></div>
+          <div class="pc-source">✓ Donald Ralph Dunn obituary 2020</div>
+        </div>
+        <div class="pcard new-found" onclick="showDetail('rick-phillips')">
+          <div class="pc-badges"><span class="badge b-new">✦ Newly Found</span></div>
+          <div class="pc-name">Rick <span class="surn">Phillips</span></div>
+          <div class="pc-dates">Husband of Carolyn L. Dunn · Son-in-law of Ralph &amp; Dorothy</div>
+        </div>
+      </div></div>
+    </div><!-- /Dunn -->
+
+    <!-- MORIN / CRANDELL -->
+    <div class="accordion">
+      <div class="acc-head" onclick="toggleAcc(this)">
+        <div class="acc-head-title">
+          <svg width="18" height="22" viewBox="0 0 52 62"><path d="M4,4 L48,4 L48,38 Q48,56 26,60 Q4,56 4,38 Z" fill="#1a4a1a" stroke="#C9A84C" stroke-width="2"/><path d="M6,32 L26,12 L46,32" fill="none" stroke="#C9A84C" stroke-width="2.5" stroke-linejoin="round"/><text x="26" y="50" text-anchor="middle" fill="#C9A84C" font-size="9">★★★</text></svg>
+          Morin / Crandell Line <span class="badge b-gen" style="margin-left:4px">12 members</span>
+        </div>
+        <span class="acc-head-arrow">▼</span>
+      </div>
+      <div class="acc-body"><div class="acc-inner">
+        <div class="pcard" onclick="showDetail('jeanette-morin')">
+          <div class="pc-name">Jeanette Mabel <span class="surn">Morin</span></div>
+          <div class="pc-dates"><b>b.</b> 31 Mar 1927 · Maine &nbsp;<b>d.</b> 20 May 1995 · Los Angeles, CA</div>
+          <div class="pc-dates">Wife of Bernard Patrick Greeran · 7 children</div>
+        </div>
+        <div class="pcard" onclick="showDetail('bernard-crandell')">
+          <div class="pc-name">Bernard Lewis <span class="surn">Crandell</span></div>
+          <div class="pc-dates"><b>b.</b> 29 Jan 1924 · Sanborn, Barnes Co., ND &nbsp;<b>d.</b> 29 Aug 1989 · Duarte, CA</div>
+          <div class="pc-dates">Warehouseman · Bur. Covina, LA Co., CA</div>
+        </div>
+        <div class="pcard" onclick="showDetail('thelma-crandell')">
+          <div class="pc-name">Thelma Irene <span class="surn">Crandell</span></div>
+          <div class="pc-dates"><b>b.</b> 10 Jul 1926 · Los Angeles, CA &nbsp;<b>d.</b> 10 Oct 1998 · Duarte, CA</div>
+          <div class="pc-dates">Wife of Bernard Lewis Crandell</div>
+        </div>
+        <div class="pcard" onclick="showDetail('lila-hewitt')">
+          <div class="pc-name">Lila Jean <span class="surn">Crandall</span> Hewitt</div>
+          <div class="pc-dates"><b>b.</b> ~1947 · California · Wife of Charles Frederick Hewitt</div>
+          <div class="pc-dates">Son: Randy Hewitt (m. Kimberly Yount)</div>
+        </div>
+        <div class="pcard" onclick="showDetail('wellington-crandell')">
+          <div class="pc-name">Wellington Lake <span class="surn">Crandell</span></div>
+          <div class="pc-dates"><b>b.</b> 11 Sep 1879 · Drumbo, Oxford Co., Ontario, Canada</div>
+          <div class="pc-dates"><b>d.</b> 29 Nov 1956 · Cass Co., ND</div>
+        </div>
+      </div></div>
+    </div><!-- /Morin-Crandell -->
+
+    <!-- EMMONS / PEARSON / KANSAS LINES -->
+    <div class="accordion">
+      <div class="acc-head" onclick="toggleAcc(this)">
+        <div class="acc-head-title">
+          <svg width="18" height="22" viewBox="0 0 52 62"><path d="M4,4 L48,4 L48,38 Q48,56 26,60 Q4,56 4,38 Z" fill="#3a1a3a" stroke="#C9A84C" stroke-width="2"/><text x="26" y="34" text-anchor="middle" fill="#C9A84C" font-size="16">⚜</text></svg>
+          Emmons / Pearson / Kansas <span class="badge b-gen" style="margin-left:4px">10 members</span>
+        </div>
+        <span class="acc-head-arrow">▼</span>
+      </div>
+      <div class="acc-body"><div class="acc-inner">
+        <div class="pcard" onclick="showDetail('foster-emmons')">
+          <div class="pc-badges"><span class="badge b-new">+ Marriage date found</span><span class="badge b-new">+ Shriner</span></div>
+          <div class="pc-name">Foster Noel <span class="surn">Emmons</span></div>
+          <div class="pc-dates"><b>b.</b> 25 Sep 1900 · Manhattan, Riley Co., KS</div>
+          <div class="pc-dates"><b>d.</b> Sep 1969 · Topeka, KS (SSDI confirms Sep)</div>
+          <div class="pc-dates">Married Georgia Elizabeth Carey <b>25 Sep 1921</b>, Manhattan KS</div>
+          <div class="pc-dates">Children: Martha, James, Myrna, Kipp · Shriner</div>
+          <div class="pc-source">✓ Find A Grave #88914502 + SSDI</div>
+        </div>
+        <div class="pcard" onclick="showDetail('georgia-emmons')">
+          <div class="pc-name">Georgia Elizabeth <span class="surn">Carey</span> Emmons</div>
+          <div class="pc-dates"><b>b.</b> 22 Feb 1901 · Manhattan, KS &nbsp;<b>d.</b> 15 Jan 1999 · Topeka, KS</div>
+          <div class="pc-dates">Daughter of George Stanley Carey &amp; Annett Carey</div>
+        </div>
+        <div class="pcard" onclick="showDetail('myrna-walters')">
+          <div class="pc-name">Myrna Mae <span class="surn">Walters</span> Emmons</div>
+          <div class="pc-dates"><b>b.</b> 17 Nov 1926 · Manhattan, KS &nbsp;<b>d.</b> 24 Aug 2020 · Lawrence, KS</div>
+        </div>
+        <div class="pcard" onclick="showDetail('kipp-emmons')">
+          <div class="pc-name">Kipp Maytag <span class="surn">Emmons</span></div>
+          <div class="pc-dates"><b>b.</b> 9 Jan 1930 · Manhattan, KS &nbsp;<b>d.</b> 20 Apr 2012 · Topeka, KS</div>
+        </div>
+        <div class="pcard" onclick="showDetail('elzie-pearson')">
+          <div class="pc-name">Elzie Russell <span class="surn">Pearson</span></div>
+          <div class="pc-dates"><b>b.</b> 9 Feb 1910 · Kansas &nbsp;<b>d.</b> 10 Mar 2001 · Concordia, KS</div>
+          <div class="pc-dates">Married Elizabeth L. Dyer · Daughter: Marion C. Pearson</div>
+        </div>
+      </div></div>
+    </div><!-- /Emmons-Pearson -->
+
+  </div><!-- /sl-body -->
+</div><!-- /sidebar-left -->
+
+<!-- ══════════════════════════════════════ MAIN CANVAS ══════════════════════════════════════ -->
+<div id="main">
+
+  <!-- DETAIL PANEL -->
+  <div id="detail-panel" class="hidden">
+    <div id="dp-head">
+      <div id="dp-name">Select a person to view details</div>
+      <button id="dp-close" onclick="closeDetail()">✕</button>
+    </div>
+    <div id="dp-body"></div>
+  </div>
+
+  <!-- MAIN CONTENT TABS -->
+  <div class="tabs">
+    <div class="tab active" onclick="showTab('overview')">📊 Overview</div>
+    <div class="tab" onclick="showTab('greeran')">🍀 Greeran Core</div>
+    <div class="tab" onclick="showTab('hewitt')">🦅 Hewitt</div>
+    <div class="tab" onclick="showTab('dunn')">⚔ Dunn</div>
+    <div class="tab" onclick="showTab('carey')">⭐ Carey</div>
+    <div class="tab" onclick="showTab('other')">🌿 Other Lines</div>
+    <div class="tab" onclick="showTab('corrections')">✏️ All Corrections</div>
+    <div class="tab" onclick="showTab('nextsteps')">🔍 Next Steps</div>
+  </div>
+
+  <!-- ══════ OVERVIEW TAB ══════ -->
+  <div id="tab-overview" class="tab-panel active">
+    <div class="stats-grid">
+      <div class="sbox"><div class="sbox-v">2073</div><div class="sbox-l">Total People</div></div>
+      <div class="sbox"><div class="sbox-v green">31</div><div class="sbox-l">New Found</div></div>
+      <div class="sbox"><div class="sbox-v blue">24</div><div class="sbox-l">Corrected</div></div>
+      <div class="sbox"><div class="sbox-v" style="color:var(--orange)">6</div><div class="sbox-l">Military Vets</div></div>
+      <div class="sbox"><div class="sbox-v red">15</div><div class="sbox-l">Lost Children</div></div>
+      <div class="sbox"><div class="sbox-v">8</div><div class="sbox-l">Src. Cited</div></div>
+    </div>
+
+    <div class="alert alert-red">
+      <b>🚨 Biggest Discovery:</b> Irish Census 1911 — Mary (Conalty) Greeran recorded
+      <b>"Children Born: 16 — Children Living: 1."</b> Bernard &amp; Mary had 16 children but only Hugh
+      survived to 1911. 15 names are unknown. Clonduff RC Parish (baptisms 1842–1899) is the next step.
+    </div>
+
+    <div class="stitle">📰 Key Findings by Family Line</div>
+
+    <div class="finding new">
+      <b>Hewitt Line:</b> Louise Hewitt's full obituary reveals children's complete names —
+      <b>Charles Frederick</b> (not "Charles J"), <b>Robert David</b> Hewitt, <b>Terry Lee Milwood</b>
+      (husband Gary). Louise born in <b>Pasadena</b> (not "Los Angles L"). She was a nurse's aide,
+      PTA President and Humanitarian Award winner. 9 grandchildren, 7 great-grandchildren.
+      <div class="finding-src">Source: SGV Tribune / Legacy.com obituary Sep 9 2005</div>
+    </div>
+    <div class="finding new">
+      <b>Dunn Line:</b> Dorothy Louise Dunn's maiden name revealed: <b>HOLDREDGE</b>.
+      Donald Ralph Dunn born <b>4 April 1948, Altadena CA</b> (exact) — died <b>30 Aug 2020, Downey CA</b>
+      (both previously unknown). Carolyn Dunn married <b>Rick Phillips</b>.
+      Donald's 7 grandchildren: Caleb, Luke, Daniel, Grace, Hope, Isaiah, Andrew.
+      Lacey Dunn married <b>Timon Birkhofer</b>.
+      <div class="finding-src">Source: Pasadena Star News Mar 2006 + Risher Mortuary Sep 2020</div>
+    </div>
+    <div class="finding new">
+      <b>Greeran Line:</b> James T. Greeran's wife <b>Mary Ann</b> and son <b>Timothy</b> found.
+      Terry Greeran married name: <b>Miller</b>. Step-brothers <b>Michael Young</b> and <b>John Young</b>
+      (Carol Greeran's sons) confirmed. Daniel Greeran confirmed deceased before 2017.
+      <div class="finding-src">Source: Papavero FH 2012, QNS death notices, Dignity Memorial 2017</div>
+    </div>
+    <div class="finding corrected">
+      <b>Irish Census Corrections:</b> Bernard Sr. born <b>~1861</b> (not 1863), Mary born <b>~1859</b>
+      (not 1861), Hugh born <b>~1897</b> (not 1898) and in <b>Ballymackilreiny, Moneyslane, Co. Down</b>
+      specifically. Bernard Patrick's exact birth: <b>21 June 1924</b>.
+      <div class="finding-src">Source: National Archives Ireland Census 1901 &amp; 1911</div>
+    </div>
+    <div class="finding military">
+      <b>Military Records (all newly confirmed):</b> Bernard Patrick Greeran — <b>US Navy WWII</b> ·
+      Michael Patrick Greeran — <b>CPL US Marine Corps, Vietnam</b> ·
+      James T. Greeran — <b>US Navy WWII</b> (buried Calverton National Cemetery) ·
+      Ralph Dunn — <b>US Navy WWII</b>
+      <div class="finding-src">Source: Dignity Memorial, Find A Grave, Pasadena Star News obituaries</div>
+    </div>
+    <div class="finding critical">
+      <b>Gary Milwood guestbook entry confirms:</b> "Jerry, Steven and Jeanie worked side by side with mom
+      and dad" — directly placing Gerard (Jerry) Greeran, Jeanie Belle Hewitt, and their son Steven
+      Greeran all working together in the Duarte/Monrovia community alongside Maurice and Louise Hewitt.
+      <div class="finding-src">Source: Louise Hewitt memorial guestbook, Legacy.com 2005</div>
+    </div>
+  </div>
+
+  <!-- ══════ GREERAN CORE TAB ══════ -->
+  <div id="tab-greeran" class="tab-panel">
+    <div class="stitle">🍀 Core Greeran Line — Ireland → New York → California</div>
+
+    <!-- Gen I -->
+    <div class="gen-wrap">
+      <div class="gen-label-row"><div class="gen-rule"></div><div class="gen-label">Generation I — Co. Down, Ireland (~1860)</div><div class="gen-rule"></div></div>
+      <div class="couples-wrap">
+        <div class="couple-unit">
+          <div class="couple-pair" onclick="showDetail('bernard-sr')">
+            <div class="tree-person">
+              <svg class="tp-shield" viewBox="0 0 52 62"><path d="M4,4 L48,4 L48,38 Q48,56 26,60 Q4,56 4,38 Z" fill="#1a2a5e" stroke="#C9A84C" stroke-width="2"/><line x1="26" y1="4" x2="26" y2="56" stroke="#C9A84C" stroke-width="1.2" opacity=".6"/><line x1="4" y1="28" x2="48" y2="28" stroke="#C9A84C" stroke-width="1.2" opacity=".6"/><text x="13" y="23" text-anchor="middle" fill="#C9A84C" font-size="12">♜</text><text x="39" y="23" text-anchor="middle" fill="white" font-size="10">✚</text><text x="13" y="46" text-anchor="middle" fill="white" font-size="11">☘</text><text x="39" y="46" text-anchor="middle" fill="#C9A84C" font-size="11">🦁</text></svg>
+              <div class="tp-name">Bernard<span class="tp-surn">Greeran</span></div>
+              <div class="tp-dates">~1861 · Co. Down</div>
+              <div class="tp-dates">Farmer Grocer</div>
+              <div class="tp-badges"><span class="badge b-cor" style="font-size:.5rem">Corrected</span></div>
+            </div>
+            <div class="couple-sep"></div>
+            <div class="tree-person">
+              <svg class="tp-shield" viewBox="0 0 52 62"><path d="M4,4 L48,4 L48,38 Q48,56 26,60 Q4,56 4,38 Z" fill="#5a1830" stroke="#C9A84C" stroke-width="2"/><line x1="26" y1="4" x2="26" y2="56" stroke="#C9A84C" stroke-width="1" opacity=".5"/><line x1="4" y1="28" x2="48" y2="28" stroke="#C9A84C" stroke-width="1" opacity=".5"/><text x="13" y="24" text-anchor="middle" fill="#C9A84C" font-size="13">☘</text><text x="39" y="24" text-anchor="middle" fill="#C9A84C" font-size="10">✦</text><text x="26" y="46" text-anchor="middle" fill="rgba(201,168,76,.7)" font-size="9">✶✶✶</text></svg>
+              <div class="tp-name">Mary<span class="tp-surn">Conalty</span></div>
+              <div class="tp-dates">~1859 · Co. Down</div>
+              <div class="tp-dates" style="color:var(--red);font-weight:700">16 born · 15 †</div>
+              <div class="tp-badges"><span class="badge b-cor" style="font-size:.5rem">Corrected</span></div>
+            </div>
+          </div>
+          <div class="marr-bar">⚭ Married ~1895 · Co. Down, Ireland · m.1895</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Gen II -->
+    <div class="conn-v" style="height:20px"></div>
+    <div class="gen-wrap">
+      <div class="gen-label-row"><div class="gen-rule"></div><div class="gen-label">Generation II — Ireland → Queens, New York</div><div class="gen-rule"></div></div>
+      <div class="couples-wrap">
+        <div class="couple-unit">
+          <div class="couple-pair" onclick="showDetail('hugh')">
+            <div class="tree-person">
+              <svg class="tp-shield" viewBox="0 0 52 62"><path d="M4,4 L48,4 L48,38 Q48,56 26,60 Q4,56 4,38 Z" fill="#1a2a5e" stroke="#C9A84C" stroke-width="2"/><line x1="26" y1="4" x2="26" y2="56" stroke="#C9A84C" stroke-width="1.2" opacity=".6"/><line x1="4" y1="28" x2="48" y2="28" stroke="#C9A84C" stroke-width="1.2" opacity=".6"/><text x="13" y="23" text-anchor="middle" fill="#C9A84C" font-size="12">♜</text><text x="39" y="23" text-anchor="middle" fill="white" font-size="10">✚</text><text x="13" y="46" text-anchor="middle" fill="white" font-size="11">☘</text><text x="39" y="46" text-anchor="middle" fill="#C9A84C" font-size="11">🦁</text></svg>
+              <div class="tp-name">Hugh<span class="tp-surn">Greeran</span></div>
+              <div class="tp-dates">~1897 · Ballymackilreiny</div>
+              <div class="tp-dates">d. New York</div>
+              <div class="tp-badges"><span class="badge b-cor" style="font-size:.5rem">Corrected</span></div>
+            </div>
+            <div class="couple-sep"></div>
+            <div class="tree-person">
+              <svg class="tp-shield" viewBox="0 0 52 62"><path d="M4,4 L48,4 L48,38 Q48,56 26,60 Q4,56 4,38 Z" fill="#5a1830" stroke="#C9A84C" stroke-width="2"/><circle cx="26" cy="24" r="11" fill="none" stroke="#C9A84C" stroke-width="1.2"/><text x="26" y="28" text-anchor="middle" fill="#C9A84C" font-size="11">✦</text></svg>
+              <div class="tp-name">Catherine<span class="tp-surn">Greeran</span></div>
+              <div class="tp-dates">~1900 · Ireland</div>
+            </div>
+          </div>
+          <div class="marr-bar">⚭ Queens, New York</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Gen III -->
+    <div class="conn-v" style="height:20px"></div>
+    <div class="gen-wrap">
+      <div class="gen-label-row"><div class="gen-rule"></div><div class="gen-label">Generation III — Children of Hugh &amp; Catherine (born 1924–1941, New York)</div><div class="gen-rule"></div></div>
+      <div class="couples-wrap">
+
+        <!-- Bernard Patrick -->
+        <div class="couple-unit">
+          <div class="couple-pair" onclick="showDetail('bp')">
+            <div class="tree-person">
+              <svg class="tp-shield" viewBox="0 0 52 62"><path d="M4,4 L48,4 L48,38 Q48,56 26,60 Q4,56 4,38 Z" fill="#1a2a5e" stroke="#C9A84C" stroke-width="2"/><line x1="26" y1="4" x2="26" y2="56" stroke="#C9A84C" stroke-width="1.2" opacity=".6"/><line x1="4" y1="28" x2="48" y2="28" stroke="#C9A84C" stroke-width="1.2" opacity=".6"/><text x="13" y="23" text-anchor="middle" fill="#C9A84C" font-size="12">♜</text><text x="39" y="23" text-anchor="middle" fill="white" font-size="10">✚</text><text x="13" y="46" text-anchor="middle" fill="white" font-size="11">☘</text><text x="39" y="46" text-anchor="middle" fill="#C9A84C" font-size="11">🦁</text></svg>
+              <div class="tp-name">Bernard Patrick<span class="tp-surn">Greeran</span></div>
+              <div class="tp-dates">21 Jun 1924–3 Feb 2017</div>
+              <div class="tp-dates">Covina CA · USN WWII</div>
+              <div class="tp-badges"><span class="badge b-mil" style="font-size:.5rem">🎖Navy</span><span class="badge b-cor" style="font-size:.5rem">Exact date</span></div>
+            </div>
+            <div class="couple-sep"></div>
+            <div class="tree-person">
+              <svg class="tp-shield" viewBox="0 0 52 62"><path d="M4,4 L48,4 L48,38 Q48,56 26,60 Q4,56 4,38 Z" fill="#1a4a1a" stroke="#C9A84C" stroke-width="2"/><path d="M6,32 L26,12 L46,32" fill="none" stroke="#C9A84C" stroke-width="2.5" stroke-linejoin="round"/><text x="26" y="50" text-anchor="middle" fill="#C9A84C" font-size="9">★★★</text></svg>
+              <div class="tp-name">Jeanette Mabel<span class="tp-surn">Morin</span></div>
+              <div class="tp-dates">31 Mar 1927–20 May 1995</div>
+              <div class="tp-dates">Maine → Los Angeles</div>
+            </div>
+          </div>
+          <div class="marr-bar">⚭ Married · Queens, New York</div>
+        </div>
+
+        <!-- James T -->
+        <div class="couple-unit">
+          <div class="couple-pair" onclick="showDetail('james-t')">
+            <div class="tree-person">
+              <svg class="tp-shield" viewBox="0 0 52 62"><path d="M4,4 L48,4 L48,38 Q48,56 26,60 Q4,56 4,38 Z" fill="#1a2a5e" stroke="#C9A84C" stroke-width="2"/><line x1="26" y1="4" x2="26" y2="56" stroke="#C9A84C" stroke-width="1.2" opacity=".6"/><line x1="4" y1="28" x2="48" y2="28" stroke="#C9A84C" stroke-width="1.2" opacity=".6"/><text x="13" y="23" text-anchor="middle" fill="#C9A84C" font-size="12">♜</text><text x="39" y="23" text-anchor="middle" fill="white" font-size="10">✚</text><text x="13" y="46" text-anchor="middle" fill="white" font-size="11">☘</text><text x="39" y="46" text-anchor="middle" fill="#C9A84C" font-size="11">🦁</text></svg>
+              <div class="tp-name">James T.<span class="tp-surn">Greeran</span></div>
+              <div class="tp-dates">11 Jul 1925–21 Jun 2012</div>
+              <div class="tp-dates">Elmhurst NY · USN WWII</div>
+              <div class="tp-badges"><span class="badge b-mil" style="font-size:.5rem">🎖Navy</span><span class="badge b-new" style="font-size:.5rem">+Wife+Son</span></div>
+            </div>
+            <div class="couple-sep"></div>
+            <div class="tree-person">
+              <svg class="tp-shield" viewBox="0 0 52 62"><path d="M4,4 L48,4 L48,38 Q48,56 26,60 Q4,56 4,38 Z" fill="#3a1a3a" stroke="#C9A84C" stroke-width="2"/><text x="26" y="34" text-anchor="middle" fill="#C9A84C" font-size="16">✦</text></svg>
+              <div class="tp-name">Mary Ann<span class="tp-surn">Greeran</span></div>
+              <div class="tp-dates">Wife · Queens/Elmhurst NY</div>
+              <div class="tp-badges"><span class="badge b-new" style="font-size:.5rem">✦ Found</span></div>
+            </div>
+          </div>
+          <div class="marr-bar">⚭ Queens, New York · Son: Timothy</div>
+        </div>
+
+        <!-- John J -->
+        <div class="couple-unit">
+          <div class="couple-pair" onclick="showDetail('john-j')" style="min-width:0">
+            <div class="tree-person" style="min-width:120px">
+              <svg class="tp-shield" viewBox="0 0 52 62"><path d="M4,4 L48,4 L48,38 Q48,56 26,60 Q4,56 4,38 Z" fill="#1a2a5e" stroke="#C9A84C" stroke-width="2"/><line x1="26" y1="4" x2="26" y2="56" stroke="#C9A84C" stroke-width="1.2" opacity=".6"/><line x1="4" y1="28" x2="48" y2="28" stroke="#C9A84C" stroke-width="1.2" opacity=".6"/><text x="13" y="23" text-anchor="middle" fill="#C9A84C" font-size="12">♜</text><text x="39" y="23" text-anchor="middle" fill="white" font-size="10">✚</text><text x="13" y="46" text-anchor="middle" fill="white" font-size="11">☘</text><text x="39" y="46" text-anchor="middle" fill="#C9A84C" font-size="11">🦁</text></svg>
+              <div class="tp-name">John J.<span class="tp-surn">Greeran</span></div>
+              <div class="tp-dates">~1929–6 Apr 1989</div>
+              <div class="tp-dates">E. Farmingdale, NY</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Thomas (Hugh's son) -->
+        <div class="couple-unit">
+          <div class="couple-pair" onclick="showDetail('thomas-h')" style="min-width:0">
+            <div class="tree-person" style="min-width:130px">
+              <svg class="tp-shield" viewBox="0 0 52 62"><path d="M4,4 L48,4 L48,38 Q48,56 26,60 Q4,56 4,38 Z" fill="#1a2a5e" stroke="#C9A84C" stroke-width="2"/><line x1="26" y1="4" x2="26" y2="56" stroke="#C9A84C" stroke-width="1.2" opacity=".6"/><line x1="4" y1="28" x2="48" y2="28" stroke="#C9A84C" stroke-width="1.2" opacity=".6"/><text x="13" y="23" text-anchor="middle" fill="#C9A84C" font-size="12">♜</text><text x="39" y="23" text-anchor="middle" fill="white" font-size="10">✚</text><text x="13" y="46" text-anchor="middle" fill="white" font-size="11">☘</text><text x="39" y="46" text-anchor="middle" fill="#C9A84C" font-size="11">🦁</text></svg>
+              <div class="tp-name">Thomas Patrick<span class="tp-surn">Greeran</span></div>
+              <div class="tp-dates">27 Aug 1934–8 Oct 2005</div>
+              <div class="tp-dates">Cobb, Lake Co., CA</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Kathleen (Hugh's daughter) -->
+        <div class="couple-unit">
+          <div class="couple-pair" style="min-width:0">
+            <div class="tree-person" style="min-width:120px">
+              <svg class="tp-shield" viewBox="0 0 52 62"><path d="M4,4 L48,4 L48,38 Q48,56 26,60 Q4,56 4,38 Z" fill="#5a1830" stroke="#C9A84C" stroke-width="2"/><path d="M26,8 L26,52 M10,30 L42,30" stroke="#C9A84C" stroke-width="2" opacity=".6"/><circle cx="26" cy="30" r="6" fill="none" stroke="#C9A84C" stroke-width="1.2"/></svg>
+              <div class="tp-name">Kathleen<span class="tp-surn">Greeran Scott</span></div>
+              <div class="tp-dates">~1941 · New York</div>
+              <div class="tp-dates">Married name: Scott</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Gen IV — Bernard Patrick's children -->
+    <div class="conn-v" style="height:20px"></div>
+    <div class="gen-wrap">
+      <div class="gen-label-row"><div class="gen-rule"></div><div class="gen-label">Generation IV — Children of Bernard Patrick &amp; Jeanette (born 1947–~1960, California)</div><div class="gen-rule"></div></div>
+      <div class="couples-wrap">
+
+        <!-- Michael Patrick -->
+        <div class="couple-unit">
+          <div class="couple-pair" onclick="showDetail('michael-p')">
+            <div class="tree-person">
+              <svg class="tp-shield" viewBox="0 0 52 62"><path d="M4,4 L48,4 L48,38 Q48,56 26,60 Q4,56 4,38 Z" fill="#1a2a5e" stroke="#C9A84C" stroke-width="2"/><line x1="26" y1="4" x2="26" y2="56" stroke="#C9A84C" stroke-width="1.2" opacity=".6"/><line x1="4" y1="28" x2="48" y2="28" stroke="#C9A84C" stroke-width="1.2" opacity=".6"/><text x="13" y="23" text-anchor="middle" fill="#C9A84C" font-size="12">♜</text><text x="39" y="23" text-anchor="middle" fill="white" font-size="10">✚</text><text x="13" y="46" text-anchor="middle" fill="white" font-size="11">☘</text><text x="39" y="46" text-anchor="middle" fill="#C9A84C" font-size="11">🦁</text></svg>
+              <div class="tp-name">Michael Patrick<span class="tp-surn">Greeran</span></div>
+              <div class="tp-dates">20 Feb 1947–21 Feb 2005</div>
+              <div class="tp-dates">CPL USMC · Vietnam</div>
+              <div class="tp-badges"><span class="badge b-mil" style="font-size:.5rem">🎖USMC</span></div>
+            </div>
+            <div class="couple-sep"></div>
+            <div class="tree-person">
+              <svg class="tp-shield" viewBox="0 0 52 62"><path d="M4,4 L48,4 L48,38 Q48,56 26,60 Q4,56 4,38 Z" fill="#4a2a5a" stroke="#C9A84C" stroke-width="2"/><text x="26" y="34" text-anchor="middle" fill="#C9A84C" font-size="16">★</text></svg>
+              <div class="tp-name">Judy Anne<span class="tp-surn">Greeran</span></div>
+              <div class="tp-dates">7 Jan 1952–23 Apr 2025</div>
+              <div class="tp-dates">Daughter: Michelle · 3 grandch.</div>
+            </div>
+          </div>
+          <div class="marr-bar">⚭ Married · Oakdale Memorial Park, Glendora</div>
+        </div>
+
+        <!-- Patricia + Donald Dunn -->
+        <div class="couple-unit">
+          <div class="couple-pair" onclick="showDetail('patricia')">
+            <div class="tree-person">
+              <svg class="tp-shield" viewBox="0 0 52 62"><path d="M4,4 L48,4 L48,38 Q48,56 26,60 Q4,56 4,38 Z" fill="#1a2a5e" stroke="#C9A84C" stroke-width="2"/><line x1="26" y1="4" x2="26" y2="56" stroke="#C9A84C" stroke-width="1.2" opacity=".6"/><line x1="4" y1="28" x2="48" y2="28" stroke="#C9A84C" stroke-width="1.2" opacity=".6"/><text x="13" y="23" text-anchor="middle" fill="#C9A84C" font-size="12">♜</text><text x="39" y="23" text-anchor="middle" fill="white" font-size="10">✚</text><text x="13" y="46" text-anchor="middle" fill="white" font-size="11">☘</text><text x="39" y="46" text-anchor="middle" fill="#C9A84C" font-size="9">★</text></svg>
+              <div class="tp-name">Patricia<span class="tp-surn">Greeran</span> Dunn</div>
+              <div class="tp-dates">d. living (est.)</div>
+            </div>
+            <div class="couple-sep"></div>
+            <div class="tree-person">
+              <svg class="tp-shield" viewBox="0 0 52 62"><path d="M4,4 L48,4 L48,38 Q48,56 26,60 Q4,56 4,38 Z" fill="#1a3a1a" stroke="#C9A84C" stroke-width="2"/><path d="M10,10 L42,50 M42,10 L10,50" stroke="#C9A84C" stroke-width="2.5" opacity=".5"/></svg>
+              <div class="tp-name">Donald Ralph<span class="tp-surn">Dunn</span></div>
+              <div class="tp-dates">4 Apr 1948–30 Aug 2020</div>
+              <div class="tp-dates">Altadena→Downey CA · IT/Healthcare</div>
+              <div class="tp-badges"><span class="badge b-cor" style="font-size:.5rem">Exact dates</span></div>
+            </div>
+          </div>
+          <div class="marr-bar">⚭ 4 children · 7 grandchildren</div>
+        </div>
+
+        <!-- Gerard + Jeanie -->
+        <div class="couple-unit">
+          <div class="couple-pair" onclick="showDetail('gerard')">
+            <div class="tree-person">
+              <svg class="tp-shield" viewBox="0 0 52 62"><path d="M4,4 L48,4 L48,38 Q48,56 26,60 Q4,56 4,38 Z" fill="#1a2a5e" stroke="#C9A84C" stroke-width="2"/><line x1="26" y1="4" x2="26" y2="56" stroke="#C9A84C" stroke-width="1.2" opacity=".6"/><line x1="4" y1="28" x2="48" y2="28" stroke="#C9A84C" stroke-width="1.2" opacity=".6"/><text x="13" y="23" text-anchor="middle" fill="#C9A84C" font-size="12">♜</text><text x="39" y="23" text-anchor="middle" fill="white" font-size="10">✚</text><text x="13" y="46" text-anchor="middle" fill="white" font-size="11">☘</text><text x="39" y="46" text-anchor="middle" fill="#C9A84C" font-size="11">🦁</text></svg>
+              <div class="tp-name">Gerard "Jerry" T.<span class="tp-surn">Greeran</span></div>
+              <div class="tp-dates">~1955 · Glendora, CA</div>
+            </div>
+            <div class="couple-sep"></div>
+            <div class="tree-person">
+              <svg class="tp-shield" viewBox="0 0 52 62"><path d="M4,4 L48,4 L48,38 Q48,56 26,60 Q4,56 4,38 Z" fill="#2a1a5e" stroke="#C9A84C" stroke-width="2"/><path d="M42,6 L6,54" stroke="#C9A84C" stroke-width="4" opacity=".4"/><text x="16" y="24" text-anchor="middle" fill="#C9A84C" font-size="13">🦅</text><text x="36" y="44" text-anchor="middle" fill="#C9A84C" font-size="13">🦅</text></svg>
+              <div class="tp-name">Jean Belle<span class="tp-surn">Hewitt</span> Greeran</div>
+              <div class="tp-dates">~1951 · Duarte, CA</div>
+              <div class="tp-dates">Daughter of Maurice &amp; Louise</div>
+            </div>
+          </div>
+          <div class="marr-bar">⚭ Son: Steven Greeran (3 marriages · son Aiden)</div>
+        </div>
+
+        <!-- Terry → Miller -->
+        <div class="couple-unit">
+          <div class="couple-pair" onclick="showDetail('terry-miller')" style="min-width:0">
+            <div class="tree-person" style="min-width:135px">
+              <svg class="tp-shield" viewBox="0 0 52 62"><path d="M4,4 L48,4 L48,38 Q48,56 26,60 Q4,56 4,38 Z" fill="#5a1830" stroke="#C9A84C" stroke-width="2"/><path d="M26,8 L26,52 M10,30 L42,30" stroke="#C9A84C" stroke-width="2" opacity=".5"/><text x="26" y="24" text-anchor="middle" fill="#C9A84C" font-size="9">GRN</text><text x="26" y="44" text-anchor="middle" fill="#C9A84C" font-size="9">MLR</text></svg>
+              <div class="tp-name">Terry<span class="tp-surn">Greeran → Miller</span></div>
+              <div class="tp-dates">Married name: Miller</div>
+              <div class="tp-badges"><span class="badge b-cor" style="font-size:.5rem">Name found</span></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="alert alert-gold" style="margin-top:12px">
+      <b>Also confirmed:</b> Thomas Patrick Greeran (son of Bernard Patrick) wife Judy Miller, daughter Linda Webber (m. Webber, children Lexi, Keith &amp; David Santiago) ·
+      Daniel Lee Greeran (son of Bernard Patrick) confirmed deceased before 2017 ·
+      Kathleen Greeran Scott (sister of Bernard Patrick, daughter of Hugh) ·
+      Step-sons John Young (+ wife Cheryl) and Michael Young via Carol J. Greeran's prior marriage
+    </div>
+  </div>
+
+  <!-- ══════ HEWITT TAB ══════ -->
+  <div id="tab-hewitt" class="tab-panel">
+    <div class="stitle">🦅 Hewitt Family Line — Stockton → Duarte, California</div>
+    <div class="alert alert-green">
+      <b>Source:</b> SGV Tribune / Legacy.com obituary of Louise Francis Carey Hewitt, Sep 9 2005
+      (URL: legacy.com/us/obituaries/sgvtribune/name/louise-hewitt-obituary?id=26395403) —
+      Full family confirmed with children's complete names and husband Gary Milwood spelling.
+    </div>
+    <div class="finding new"><b>Maurice Frederick Hewitt</b> (b. 27 Mar 1913 Stockton, d. 28 Feb 2007 Duarte) married Louise Frances Carey ~1939 — <b>66 years</b>. Both confirmed via obituary.</div>
+    <div class="finding corrected"><b>Louise born in Pasadena CA</b> (not "Los Angles L, California" as in GEDCOM). Birth place corrected. Died at Gladstone Rehabilitation Hospital, Glendora after Alzheimer's disease.</div>
+    <div class="finding new"><b>Full names of all 5 children confirmed:</b><br>
+      1. <b>Terry Lee Milwood</b> (husband <b>Gary Milwood</b> — spelled with ONE L) — guestbook signed "Gary and Terry"<br>
+      2. <b>Charles Frederick Hewitt</b> (was "Charles J Hewitt" in GEDCOM — middle name is Frederick, guestbook: "Chuck &amp; Lila Hewitt")<br>
+      3. <b>Linda Louise Eiselein</b> (was "Linda Lee Hewitt" in GEDCOM — married name Eiselein confirmed)<br>
+      4. <b>Jean Belle Greeran</b> (married Gerard Greeran — guestbook: "Jerry, Steven and Jeanie worked side by side with mom and dad")<br>
+      5. <b>Robert David Hewitt</b> (was "Robert Hewitt" — middle name David confirmed)
+    </div>
+    <div class="finding corrected"><b>Kristen Eiselein Berryhill</b> signed guestbook "Kristen Eiselein/Berryhill, Samantha and I love you" — confirms her marriage to Corey Berryhill and daughter Samantha is hers.</div>
+    <div class="finding new"><b>9 grandchildren, 7 great-grandchildren</b> total as of 2005. Names not listed individually in obituary.</div>
+    <div class="finding new"><b>Occupation:</b> Louise was a long-time nurse's aide, Duarte Unified School District; PTA President; President of Duarte Community Service Council; won Foothill Unity Center <b>Heart in Hand Humanitarian Award 1998</b>.</div>
+    <div class="finding new"><b>Burial:</b> Forest Lawn, Covina Hills (private family service, Sep 1 2005).</div>
+  </div>
+
+  <!-- ══════ DUNN TAB ══════ -->
+  <div id="tab-dunn" class="tab-panel">
+    <div class="stitle">⚔ Dunn Family Line — Illinois → California</div>
+    <div class="alert alert-green">
+      <b>Sources:</b> Pasadena Star News obituary Ralph Dunn, Mar 22 2006 ·
+      Risher Mortuary obituary Donald Ralph Dunn, Sep 2020
+    </div>
+    <div class="finding new"><b>Dorothy Louise Holdredge</b> — maiden name HOLDREDGE confirmed! Previously in GEDCOM as "Dorothy Louise Dunn" with no maiden name. Obit names "Dorothy Louise Holdredge."</div>
+    <div class="finding new"><b>Ralph Dunn</b> grew up in San Pedro, CA; graduated <b>Muir Tech, Pasadena</b>. Worked for <b>US Steel as a hydraulics engineer</b>. After retirement, traveled worldwide as engineering consultant.</div>
+    <div class="finding military"><b>Ralph Dunn</b> served in <b>US Navy during WWII</b> — military service confirmed.</div>
+    <div class="finding new"><b>Donald Ralph Dunn</b> exact birth: <b>4 April 1948, Altadena, California</b>. Previously listed as "abt 1949, California." Exact death: <b>30 August 2020, Downey, California</b>. Worked 40+ years in information technology for healthcare industry.</div>
+    <div class="finding new"><b>Carolyn Dunn married Rick Phillips</b> — her married name was unknown. Children via Carolyn: Shelley Coscarelli (husband Ken) and David Phillips (wife Kristy).</div>
+    <div class="finding new"><b>Great-grandchildren of Ralph &amp; Dorothy:</b> Amelia, Noah, Daniel and Victoria Coscarelli; Morgan Phillips.</div>
+    <div class="finding new"><b>Donald's 7 grandchildren:</b> Caleb, Luke, Daniel, Grace, Hope, Isaiah, Andrew Dunn.</div>
+    <div class="finding new"><b>Lacey Dunn married Timon Birkhofer</b> — her husband's surname confirmed.</div>
+    <div class="finding new"><b>Ralph Vernon Dunn Sr.</b> (grandfather) born 15 Jan 1894 Illinois, died 7 Jul 1980 Los Angeles Co. Buried Altadena, LA Co. <b>Pearl Louise Dunn</b> born 9 Mar 1897 Illinois, died 15 Mar 1983 LA Co.</div>
+  </div>
+
+  <!-- ══════ CAREY TAB ══════ -->
+  <div id="tab-carey" class="tab-panel">
+    <div class="stitle">⭐ Carey Family Line — Indiana → Iowa → Kansas → California</div>
+    <div class="finding new"><b>Joel Thornburg Carey</b> (b. 7 May 1832 Carmel, Hamilton Co. Indiana, d. 2 Apr 1915 Indiana) married <b>Elizabeth Stanley</b> (b. ~1831/1832 Indiana, d. 11 Jan 1927) in 1854 Indiana. Had 6 recorded children: Serepta, Niley H., Lyman W., Luther G., Mima, George Stanley.</div>
+    <div class="finding new"><b>Luther G. Carey</b> (b. 1867 Indiana, d. 1897 Altadena CA) married <b>Millie Ruth</b> (b. 16 Nov 1868 Illinois, d. 12 Apr 1937 LA Co). Their son <b>Francis Gray Carey</b> (b. 4 Feb 1897 Pasadena) connects directly to the Hewitt/Greeran line.</div>
+    <div class="finding new"><b>Francis Gray Carey</b> married <b>Daisy Beatrice Carey</b> (b. 19 Sep 1904 Texas, d. 20 Jan 1989 Monrovia, CA). Their daughter <b>Louise Frances Carey</b> married Maurice Frederick Hewitt, whose daughter Jean Belle married Gerard Greeran.</div>
+    <div class="finding new"><b>George Stanley Carey</b> (b. 30 Nov 1874 Iowa, d. 30 Apr 1936 Manhattan, KS) married <b>Annett Carey</b> (b. 26 Aug 1876 Columbus City, Iowa, d. 24 Dec 1908 Pomona, CA). Their daughter Georgia Elizabeth became Georgia Emmons, linking to the Emmons-Pearson Kansas line.</div>
+    <div class="finding new"><b>Niley H. Carey</b> (b. ~1864 Indiana) married <b>Irene Y. Yates</b> (b. 16 Dec 1865 Iowa, d. 16 Dec 1961 Sonoma Co. CA). In 1950 both were living in Sonoma, CA.</div>
+  </div>
+
+  <!-- ══════ OTHER LINES TAB ══════ -->
+  <div id="tab-other" class="tab-panel">
+    <div class="stitle">🌿 Other Connected Family Lines</div>
+    <div class="finding new"><b>Emmons Line (Kansas):</b> Foster Noel Emmons married Georgia Elizabeth Carey on <b>25 Sep 1921 in Manhattan, Kansas</b> (exact marriage date found from Find A Grave). Foster was a <b>Shriner</b>. Children: Martha Elizabeth (Ross), James (Emmons), Myrna Mae (Walters), Kipp Maytag. SSDI confirms death in Sep 1969, last residence Topeka KS 66609. Buried Sunset Cemetery, Manhattan, Riley Co., KS.</div>
+    <div class="finding new"><b>Pearson Line (Kansas):</b> Elzie Russell Pearson (b. 9 Feb 1910 Kansas, d. 10 Mar 2001 Concordia KS) married Elizabeth L. Dyer (b. 20 May 1908, d. 1 Apr 1986). Daughter Marion C. Pearson (b. ~1933 Kansas). Elzie was a presser in 1950 Concordia. SSN issued in Oklahoma before 1951.</div>
+    <div class="finding new"><b>Jezler Line (California):</b> Leah Jezler (b. 22 Nov 1871 Tama Co. Iowa, d. 3 Jun 1949 Butte Co. CA) married in the Carey/Yates line. Son Karl Lucas Jezler (b. 6 Mar 1909 Dunsmuir, Siskiyou Co. CA, d. 7 Dec 1979 Chico, Butte Co. CA). Granddaughter Karl Jezler married a daughter of Mima Carey Dyer.</div>
+    <div class="finding new"><b>Yates Line (Ohio → Kansas → California):</b> Joseph Yates (b. 1824 Ohio, d. 1901 LA Co.) married Mary Esther Yates (b. 25 Nov 1838 Belmont Co. Ohio, d. 28 Nov 1907 Long Beach CA). Their children: Oliver (m. Olive Fowler), Almeda, Sherman, Irene Y. (married Niley H. Carey), Leah (married Jezler).</div>
+    <div class="finding new"><b>Crandell Line (North Dakota → California):</b> Wellington Lake Crandell (b. 11 Sep 1879 Drumbo, Oxford Co., Ontario, Canada, d. 29 Nov 1956 Cass Co. ND) married Caroline Margaret Crandell (b. 28 Oct 1881 Sweden, d. 23 Oct 1961 Barnes Co. ND). Son Bernard Lewis Crandell (b. 29 Jan 1924 Sanborn ND) moved to California and married Thelma Irene (b. 10 Jul 1926 LA). Their daughter Lila Jean Crandall married Charles Frederick Hewitt.</div>
+    <div class="finding corrected"><b>McEntyre Line (Arkansas/Kentucky):</b> William Monroe McEntyre (b. 24 Jun 1858 Pellville, Hancock Co. KY, d. 2 Jul 1946 Little Rock AR) married Nancy A. Faubus (b. 18 Jan 1872 Hilburn, Madison Co. AR). Their children: Walter, Mort Alfred, Richard, Neal, Robert, Delia (Bailey), Dorothy (Reddin) — all confirmed via Find A Grave. This links to the Bond/Faubus/Arkansas lines.</div>
+  </div>
+
+  <!-- ══════ CORRECTIONS TAB ══════ -->
+  <div id="tab-corrections" class="tab-panel">
+    <div class="stitle">✏️ All Corrections &amp; New Data — Complete Table</div>
+    <div style="overflow-x:auto">
+    <table class="ctable">
+      <tr><th>Person</th><th>Field</th><th>Old Value (GEDCOM)</th><th>New Value (Researched)</th><th>Source</th></tr>
+      <tr><td class="td-name">Bernard Greeran Sr.</td><td>Birth year</td><td class="td-old">~1863</td><td class="td-new">~1861</td><td class="td-src">1911 Irish Census (age 50)</td></tr>
+      <tr><td class="td-name">Mary Conalty Greeran</td><td>Birth year</td><td class="td-old">~1861</td><td class="td-new">~1859</td><td class="td-src">1911 Irish Census (age 52)</td></tr>
+      <tr><td class="td-name">Hugh Greeran</td><td>Birth year</td><td class="td-old">~1898</td><td class="td-new">~1897</td><td class="td-src">1901 Census (age 4) + 1911 (age 14)</td></tr>
+      <tr><td class="td-name">Hugh Greeran</td><td>Birth place</td><td class="td-old">Ireland (vague)</td><td class="td-new">Ballymackilreiny, Moneyslane, Co. Down</td><td class="td-src">Both Irish Censuses confirm townland</td></tr>
+      <tr><td class="td-name">Bernard Patrick Greeran</td><td>Birth date</td><td class="td-old">Jun 1924</td><td class="td-new">21 June 1924</td><td class="td-src">Dignity Memorial obit 2017</td></tr>
+      <tr><td class="td-name">Bernard Patrick Greeran</td><td>Military</td><td class="td-old">(none)</td><td class="td-new">US Navy Veteran, WWII</td><td class="td-src">Dignity Memorial obit 2017</td></tr>
+      <tr><td class="td-name">Michael Patrick Greeran</td><td>Military</td><td class="td-old">(none)</td><td class="td-new">CPL US Marine Corps, Vietnam</td><td class="td-src">Find A Grave #192194645 gravestone</td></tr>
+      <tr><td class="td-name">Michael Patrick Greeran</td><td>Burial GPS</td><td class="td-old">Glendora (no coords)</td><td class="td-new">34.1106421, -117.873543</td><td class="td-src">Find A Grave #192194645</td></tr>
+      <tr><td class="td-name">James T. Greeran</td><td>Military</td><td class="td-old">(none)</td><td class="td-new">US Navy Veteran, WWII</td><td class="td-src">Papavero FH obit June 2012</td></tr>
+      <tr><td class="td-name">Terry Greeran</td><td>Married name</td><td class="td-old">(unknown)</td><td class="td-new">Miller</td><td class="td-src">Bernard Patrick obit 2017</td></tr>
+      <tr><td class="td-name">Louise Frances Carey</td><td>Birth place</td><td class="td-old">Los Angles L, California</td><td class="td-new">Pasadena, California</td><td class="td-src">SGV Tribune obit Sep 2005</td></tr>
+      <tr><td class="td-name">Charles J Hewitt</td><td>Middle name</td><td class="td-old">J.</td><td class="td-new">Frederick</td><td class="td-src">Louise Hewitt obit "Charles Frederick Hewitt"</td></tr>
+      <tr><td class="td-name">Robert Hewitt</td><td>Full name</td><td class="td-old">Robert Hewitt</td><td class="td-new">Robert David Hewitt</td><td class="td-src">Louise Hewitt obit "Robert David Hewitt"</td></tr>
+      <tr><td class="td-name">Linda Lee Hewitt</td><td>Full name</td><td class="td-old">Linda Lee Hewitt</td><td class="td-new">Linda Louise Eiselein</td><td class="td-src">Louise Hewitt obit "Linda Louise Eiselein"</td></tr>
+      <tr><td class="td-name">Gary F Millwood</td><td>Surname spelling</td><td class="td-old">Millwood (two L's)</td><td class="td-new">Milwood (one L)</td><td class="td-src">Louise Hewitt obit guestbook "Gary Milwood"</td></tr>
+      <tr><td class="td-name">Dorothy Louise Dunn</td><td>Maiden name</td><td class="td-old">(unknown)</td><td class="td-new">Holdredge</td><td class="td-src">Ralph Dunn obit "Dorothy Louise Holdredge"</td></tr>
+      <tr><td class="td-name">Donald R Dunn</td><td>Birth date</td><td class="td-old">abt 1949</td><td class="td-new">4 April 1948</td><td class="td-src">Risher Mortuary obit Sep 2020</td></tr>
+      <tr><td class="td-name">Donald R Dunn</td><td>Birth place</td><td class="td-old">California (vague)</td><td class="td-new">Altadena, California</td><td class="td-src">Risher Mortuary obit Sep 2020</td></tr>
+      <tr><td class="td-name">Donald R Dunn</td><td>Death date</td><td class="td-old">(unknown)</td><td class="td-new">30 August 2020</td><td class="td-src">Risher Mortuary obit Sep 2020</td></tr>
+      <tr><td class="td-name">Donald R Dunn</td><td>Death place</td><td class="td-old">(unknown)</td><td class="td-new">Downey, California</td><td class="td-src">Risher Mortuary obit Sep 2020</td></tr>
+      <tr><td class="td-name">Carolyn L Dunn</td><td>Married name</td><td class="td-old">(unknown)</td><td class="td-new">Phillips (husband Rick)</td><td class="td-src">Ralph Dunn obit 2006</td></tr>
+      <tr><td class="td-name">Ralph Dunn</td><td>Military</td><td class="td-old">(none)</td><td class="td-new">US Navy Veteran, WWII</td><td class="td-src">Pasadena Star News obit 2006</td></tr>
+      <tr><td class="td-name">Foster Noel Emmons</td><td>Death month</td><td class="td-old">1969 (year only)</td><td class="td-new">September 1969</td><td class="td-src">SSDI record + Find A Grave</td></tr>
+      <tr><td class="td-name">Foster + Georgia Emmons</td><td>Marriage date</td><td class="td-old">(unknown)</td><td class="td-new">25 September 1921, Manhattan, KS</td><td class="td-src">Find A Grave #88914502</td></tr>
+    </table>
+    </div>
+
+    <div class="stitle" style="margin-top:20px">👥 New Individuals Added to GEDCOM</div>
+    <table class="ctable">
+      <tr><th>Name</th><th>Relationship</th><th>Key Facts</th><th>Source</th></tr>
+      <tr><td class="td-name">Mary Ann Greeran</td><td>Wife of James T. Greeran</td><td>Elmhurst/Queens NY · survived husband 2012</td><td class="td-src">Papavero FH obit 2012</td></tr>
+      <tr><td class="td-name">Timothy Greeran</td><td>Son of James T. + Mary Ann</td><td>Generation V · Queens/NY area</td><td class="td-src">Papavero FH obit 2012</td></tr>
+      <tr><td class="td-name">Michael Young</td><td>Step-son of Bernard Patrick via Carol J.</td><td>Step-brother to Jerry, Pat, Terry, Michael</td><td class="td-src">Dignity Memorial + SGV Tribune 2005</td></tr>
+      <tr><td class="td-name">John Young</td><td>Step-son of Bernard Patrick via Carol J.</td><td>Wife: Cheryl Young</td><td class="td-src">SGV Tribune obit 2005</td></tr>
+      <tr><td class="td-name">Cheryl Young</td><td>Wife of John Young</td><td>Confirmed by Michael Patrick obit</td><td class="td-src">SGV Tribune Feb 24 2005</td></tr>
+      <tr><td class="td-name">Mr. Miller</td><td>Husband of Terry Greeran</td><td>Surname: Miller · first name unknown</td><td class="td-src">Bernard Patrick obit 2017</td></tr>
+      <tr><td class="td-name">Rick Phillips</td><td>Husband of Carolyn L. Dunn</td><td>Son-in-law of Ralph &amp; Dorothy Dunn</td><td class="td-src">Ralph Dunn obit 2006</td></tr>
+      <tr><td class="td-name">Timon Birkhofer</td><td>Husband of Lacey Dunn</td><td>Son-in-law of Donald Ralph Dunn</td><td class="td-src">Donald Dunn obit 2020</td></tr>
+      <tr><td class="td-name">Shelley Coscarelli</td><td>Granddaughter via Carolyn Phillips</td><td>Husband: Ken Coscarelli · children: Amelia, Noah, Daniel, Victoria</td><td class="td-src">Ralph Dunn obit 2006</td></tr>
+      <tr><td class="td-name">David Phillips</td><td>Grandson via Carolyn Phillips</td><td>Wife: Kristy · child: Morgan</td><td class="td-src">Ralph Dunn obit 2006</td></tr>
+      <tr><td class="td-name">7 Dunn Grandchildren</td><td>Donald &amp; Patricia's grandchildren</td><td>Caleb, Luke, Daniel, Grace, Hope, Isaiah, Andrew</td><td class="td-src">Donald Dunn obit 2020</td></tr>
+    </table>
+  </div>
+
+  <!-- ══════ NEXT STEPS TAB ══════ -->
+  <div id="tab-nextsteps" class="tab-panel">
+    <div class="stitle">🔍 Recommended Next Research Steps</div>
+    <div class="step"><div class="step-n">1</div><div class="step-t"><b>Clonduff &amp; Drumgooland RC Parish Registers</b> — 15 unnamed Greeran children (died pre-1911, Co. Down). Baptism &amp; burial 1882–1910. Access: <a href="https://rootsireland.ie/down/online-sources.php" target="_blank">rootsireland.ie Down Collection</a>. Clonduff Parish covers baptisms 1842–1899, marriages 1845–1926, burials 1858–1912.</div></div>
+    <div class="step"><div class="step-n">2</div><div class="step-t"><b>Ellis Island passenger lists</b> — Hugh Greeran's arrival from Ireland, likely 1919–1923 via Liverpool or Queenstown. Search: <a href="https://libertyellisfoundation.org" target="_blank">libertyellisfoundation.org</a> and Ancestry.com for "Hugh Greeran" arriving New York.</div></div>
+    <div class="step"><div class="step-n">3</div><div class="step-t"><b>USCIS Genealogy Program</b> — Hugh Greeran naturalization petition, likely Queens County Court c.1924–1935. May reveal exact arrival date, ship, and Catherine's maiden name. Apply: <a href="https://www.uscis.gov/records/genealogy" target="_blank">uscis.gov/records/genealogy</a></div></div>
+    <div class="step"><div class="step-n">4</div><div class="step-t"><b>Dorothy Louise Holdredge parents</b> — Now that the maiden name HOLDREDGE is confirmed, search 1920/1930 census for Holdredge family in California. May reveal parents' names and siblings for Dorothy.</div></div>
+    <div class="step"><div class="step-n">5</div><div class="step-t"><b>California Birth Index 1905–1995</b> (FamilySearch.org, free) — Gerard T. Greeran (~1955), Steven Greeran, Patricia Greeran, Terry Greeran, Timothy Greeran. Filter: Father surname Greeran or Holdredge for Dorothy.</div></div>
+    <div class="step"><div class="step-n">6</div><div class="step-t"><b>Maurice Frederick Hewitt's parents</b> — His FAMC is @F552@ pointing to @I142781022407@ ("wife only" family F552 → wife is the only listed parent). Search Stockton/San Joaquin Co. CA birth records 1913 for Maurice Hewitt. Mother may be identifiable via 1920 census.</div></div>
+    <div class="step"><div class="step-n">7</div><div class="step-t"><b>Jeanette Mabel Morin parents</b> — FAMC @F551@ points to a "wife only" family where the mother is @I142781094249@. Search Maine and New York vital records 1920s for Morin family. FAMC family shows only a mother (no father listed).</div></div>
+    <div class="step"><div class="step-n">8</div><div class="step-t"><b>Mary Ann Greeran maiden name</b> — Search NYC Municipal Archives marriage index 1940s–1960s for "James Greeran + Mary Ann." Also try Vital Search: <a href="https://www.vitalsearch-worldwide.com" target="_blank">vitalsearch-worldwide.com</a></div></div>
+    <div class="step"><div class="step-n">9</div><div class="step-t"><b>Vietnam Service Records for Michael Patrick Greeran</b> — CPL USMC, Vietnam. Request military records via <a href="https://www.archives.gov/veterans/military-service-records" target="_blank">archives.gov/veterans</a> (NA Form 13164). Will show unit, dates, any commendations.</div></div>
+    <div class="step"><div class="step-n">10</div><div class="step-t"><b>Daisy Beatrice Carey parents</b> — Born 19 Sep 1904 in Texas. Married Francis Gray Carey. Her parents are unknown in the tree. Search 1910 Texas census for Carey or related families with daughter Daisy b.1904.</div></div>
+    <div class="step"><div class="step-n">11</div><div class="step-t"><b>Griffith's Valuation / PRONI</b> — Greeran farm at Ballymacarney, Co. Down may appear in Griffith's Valuation (~1864) under Bernard's father. Would identify Bernard Greeran Sr.'s parents. Search <a href="https://www.askaboutireland.ie/griffith-valuation/" target="_blank">askaboutireland.ie/griffith-valuation</a></div></div>
+    <div class="step"><div class="step-n">12</div><div class="step-t"><b>publicrecords.directory</b> — Historical addresses for deceased individuals in key localities: Duarte/Monrovia/Covina (Hewitt/Greeran), Pasadena (Dunn), Manhattan KS (Emmons/Pearson), Elmhurst Queens NY (James T. Greeran). These may reveal neighbors and additional family connections.</div></div>
+  </div>
+
+</div><!-- /main -->
+
+<!-- ══════════════════════════════ RIGHT SIDEBAR — RESEARCH PANEL ══════════════════════════════ -->
+<div id="sidebar-right">
+  <div id="sr-header">
+    <div id="sr-title">🔎 Research Sources</div>
+    <button class="sidebar-toggle" onclick="toggleSidebar('right')">✕ Close</button>
+  </div>
+  <div id="sr-body">
+
+    <div class="accordion">
+      <div class="acc-head open" onclick="toggleAcc(this)">
+        <div class="acc-head-title">📜 Irish National Archives Census</div>
+        <span class="acc-head-arrow">▼</span>
+      </div>
+      <div class="acc-body open"><div class="acc-inner">
+        <div class="finding corrected"><b>1901 Census:</b> House 40, Ballymacarney, Moneyslane, Down<br>Bernard (38), Hugh (4), Mary (40). Confirms Hugh born ~1897.</div>
+        <div class="finding critical"><b>1911 Census:</b> House 9, Ballymackilreiny, Moneyslane, Down<br>Bernard (50), Mary (52), Hugh (14).<br><b>CRITICAL: Mary = 16 children born, 1 living.</b><br>15 children all died before 1911.</div>
+        <div style="font-size:.6rem;color:var(--dim);margin-top:6px">
+          census.nationalarchives.ie<br>
+          New system: nationalarchives.ie/collections/search-the-census/
+        </div>
+      </div></div>
+    </div>
+
+    <div class="accordion">
+      <div class="acc-head" onclick="toggleAcc(this)">
+        <div class="acc-head-title">📰 Obituaries Consulted</div>
+        <span class="acc-head-arrow">▼</span>
+      </div>
+      <div class="acc-body"><div class="acc-inner">
+        <div class="finding new" style="font-size:.62rem"><b>Bernard Patrick Greeran</b><br>Dignity Memorial / Oakdale Mortuary, Glendora CA<br>Feb 2017 · dignitymemorial.com</div>
+        <div class="finding new" style="font-size:.62rem"><b>Michael Patrick Greeran</b><br>San Gabriel Valley Tribune Feb 24 2005<br>Find A Grave #192194645</div>
+        <div class="finding new" style="font-size:.62rem"><b>James T. Greeran</b><br>Papavero Funeral Home, Maspeth NY<br>QNS Queens death notice June 28 2012</div>
+        <div class="finding new" style="font-size:.62rem"><b>Louise Francis Carey Hewitt</b><br>SGV Tribune / Legacy.com Sep 9 2005<br>legacy.com · id=26395403</div>
+        <div class="finding new" style="font-size:.62rem"><b>Ralph Dunn</b><br>Pasadena Star News Mar 22 2006<br>pasadenastarnews.com</div>
+        <div class="finding new" style="font-size:.62rem"><b>Donald Ralph Dunn</b><br>Risher Mortuary Sep 2020<br>rishermortuary.com</div>
+      </div></div>
+    </div>
+
+    <div class="accordion">
+      <div class="acc-head" onclick="toggleAcc(this)">
+        <div class="acc-head-title">🏛 Public Databases Used</div>
+        <span class="acc-head-arrow">▼</span>
+      </div>
+      <div class="acc-body"><div class="acc-inner">
+        <div class="finding" style="font-size:.62rem"><b>Find A Grave</b> — findagrave.com<br>Michael P. Greeran #192194645<br>James T. Greeran #93431447<br>Foster N. Emmons #88914502<br>Bernard L. Crandell #6363554<br>Thelma I. Crandell #6363562</div>
+        <div class="finding" style="font-size:.62rem"><b>SSDI (Social Security Death Index)</b><br>Foster Noel Emmons — confirmed Sep 1969, Topeka KS, SSN issued Oklahoma</div>
+        <div class="finding" style="font-size:.62rem"><b>Ancestry.com Member Trees</b><br>Original GEDCOM source — 2,073 individuals<br>Exported 14 Jun 2026</div>
+        <div class="finding" style="font-size:.62rem"><b>Legacy.com / SGV Tribune</b><br>Louise Hewitt obituary + guestbook<br>14 guestbook entries including family members</div>
+      </div></div>
+    </div>
+
+    <div class="accordion">
+      <div class="acc-head" onclick="toggleAcc(this)">
+        <div class="acc-head-title">🗺 Geographic Clusters</div>
+        <span class="acc-head-arrow">▼</span>
+      </div>
+      <div class="acc-body"><div class="acc-inner">
+        <div class="finding" style="font-size:.62rem"><b>Duarte / Monrovia / Covina, CA</b><br>Core Hewitt/Greeran hub · Hewitt family home · Sacred Heart Church Covina · Oakdale Memorial Park Glendora</div>
+        <div class="finding" style="font-size:.62rem"><b>Pasadena / Altadena, CA</b><br>Ralph &amp; Dorothy Dunn · Donald Ralph Dunn born Altadena · Muir Tech school · Arcadia Friends Church</div>
+        <div class="finding" style="font-size:.62rem"><b>Queens / Elmhurst / Maspeth, NY</b><br>Hugh &amp; Catherine Greeran · Bernard Patrick early life · James T. Greeran (Ascension Church Elmhurst) · Papavero FH Maspeth</div>
+        <div class="finding" style="font-size:.62rem"><b>Ballymackilreiny / Moneyslane, Co. Down</b><br>Greeran origin farm · 1901 &amp; 1911 census · Drumgooland Parish</div>
+        <div class="finding" style="font-size:.62rem"><b>Manhattan, Riley Co., Kansas</b><br>Emmons/Carey/Pearson cluster · Sunset Cemetery · 1921 marriage Foster+Georgia</div>
+      </div></div>
+    </div>
+
+    <div class="accordion">
+      <div class="acc-head" onclick="toggleAcc(this)">
+        <div class="acc-head-title">📋 GEDCOM Files</div>
+        <span class="acc-head-arrow">▼</span>
+      </div>
+      <div class="acc-body"><div class="acc-inner">
+        <div style="font-size:.67rem;color:#9abaaa;line-height:1.7">
+          <b style="color:var(--gold)">Original:</b><br>
+          Greeran Family Tree.txt<br>
+          3,018,675 chars · 89,835 lines<br>
+          2,073 individuals · 583 families<br><br>
+          <b style="color:var(--gold)">Enriched GEDCOM:</b><br>
+          Greeran_Family_Tree_ENRICHED.ged<br>
+          +4,010 chars of new data<br>
+          All corrections applied<br>
+          New families: @FNEW001–004@<br>
+          New individuals: @INEW001–007@<br><br>
+          <b style="color:var(--gold)">Compatible with:</b><br>
+          Ancestry.com · FamilySearch<br>
+          Gramps · MacFamilyTree<br>
+          Legacy FT · RootsMagic<br>
+          Reunion · GEDCOM 5.5.1
+        </div>
+      </div></div>
+    </div>
+
+    <div class="accordion">
+      <div class="acc-head" onclick="toggleAcc(this)">
+        <div class="acc-head-title">⚠️ Data Quality Notes</div>
+        <span class="acc-head-arrow">▼</span>
+      </div>
+      <div class="acc-body"><div class="acc-inner">
+        <div class="finding critical" style="font-size:.62rem"><b>Living individuals excluded:</b> No addresses, phone numbers, or private data for any living persons. Only deceased individuals researched.</div>
+        <div class="finding" style="font-size:.62rem"><b>Age discrepancies:</b> Irish census ages are self-reported and sometimes rounded. Cross-referencing 1901+1911 gives best estimate. Hugh's 1897 birth year is highly reliable (consistent in both censuses).</div>
+        <div class="finding" style="font-size:.62rem"><b>"Terry Greeran" vs "Terry Miller":</b> Both the Bernard Patrick obit and the Michael Patrick obit consistently list this person. Same individual confirmed.</div>
+        <div class="finding" style="font-size:.62rem"><b>Thomas Patrick Greeran x2:</b> Two people named "Thomas Patrick Greeran" in GEDCOM — one son of Hugh (b.1934) and one son of Bernard Patrick (b.1947). Both are correctly separate individuals.</div>
+      </div></div>
+    </div>
+
+  </div>
+</div><!-- /sidebar-right -->
+
+</div><!-- /app -->
+
+<!-- ══════════════════════════════════════ JAVASCRIPT ══════════════════════════════════════ -->
+<script>
+// ── Sidebar toggle ──
+function toggleSidebar(side) {
+  const el = document.getElementById('sidebar-' + side);
+  const btn = document.getElementById('btn-' + side);
+  el.classList.toggle('collapsed');
+  if (side === 'left') btn.textContent = el.classList.contains('collapsed') ? '▶ Lines' : '◀ Lines';
+  else btn.textContent = el.classList.contains('collapsed') ? 'Research ▶' : 'Research ▶';
+}
+
+// ── Accordion ──
+function toggleAcc(head) {
+  head.classList.toggle('open');
+  const body = head.nextElementSibling;
+  body.classList.toggle('open');
+}
+
+// ── Tabs ──
+function showTab(id) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// ── Detail Panel ──
+const DETAILS = {
+  'bernard-sr': {
+    name: 'Bernard Greeran Sr. — Patriarch',
+    sections: [
+      { title: 'Vital Records', rows: [
+        ['Birth', '~1861 (corrected from ~1863)'],
+        ['Birth Place', 'Ballymacarney, Moneyslane, Co. Down, Ireland'],
+        ['Death', 'Unknown — not recorded in any accessed source'],
+        ['Occupation', 'Farmer · later Farmer Grocer (1911 census)'],
+        ['Religion', 'Roman Catholic'],
+      ]},
+      { title: 'Irish Census Data', rows: [
+        ['1901 Census', 'Age 38, House 40, Ballymacarney — Head of Family, Farmer'],
+        ['1911 Census', 'Age 50, House 9, Ballymackilreiny — Head of Family, Farmer Grocer'],
+        ['CRITICAL NOTE', 'Wife Mary had 16 children born, only 1 (Hugh) surviving to 1911'],
+        ['Literacy', 'Read and write (both censuses)'],
+      ]},
+      { title: 'Family', rows: [
+        ['Wife', 'Mary (Conalty) Greeran — married ~1895'],
+        ['Children', '16 total — only Hugh survived to 1911'],
+        ['Known child', 'Hugh Greeran (b. ~1897)'],
+        ['15 lost children', 'Names unknown — seek Clonduff/Drumgooland RC Parish records'],
+      ]},
+    ],
+    source: 'National Archives of Ireland: 1901 Census (Ballymacarney) · 1911 Census (Ballymackilreiny)'
+  },
+  'bp': {
+    name: 'Bernard Patrick Greeran',
+    sections: [
+      { title: 'Vital Records (Confirmed)', rows: [
+        ['Birth', '21 June 1924 (exact — confirmed from obituary)'],
+        ['Birth Place', 'Ballymacareney, Co. Down, Ireland'],
+        ['Death', '3 February 2017'],
+        ['Death Place', 'Covina, California'],
+        ['Military', 'US Navy Veteran, World War II'],
+        ['Religion', 'Roman Catholic · Sacred Heart Church, Covina CA'],
+      ]},
+      { title: 'Family (from obituary)', rows: [
+        ['1st Wife', 'Jeanette Mabel Morin (m. ~1946, d. 20 May 1995)'],
+        ['2nd Wife', 'Carol J. Greeran (J. = middle initial confirmed)'],
+        ['Sons', 'Michael Patrick Greeran (†2005) · Gerard "Jerry" T. · Daniel Greeran (†before 2017) · step-sons Michael Young, John Young'],
+        ['Daughters', 'Patricia Dunn · Terry Miller · Kathleen Greeran Scott (sister, not daughter)'],
+        ['Grandchildren', '8 total confirmed'],
+        ['Preceded by', 'Both parents · 3 brothers · Jeanette · sons Michael &amp; Daniel · 1 grandchild'],
+      ]},
+    ],
+    source: 'Dignity Memorial / Oakdale Mortuary obituary Feb 2017 · dignitymemorial.com/obituaries/glendora-ca/bernard-greeran-7282734'
+  },
+  'james-t': {
+    name: 'James Thomas Greeran',
+    sections: [
+      { title: 'Vital Records', rows: [
+        ['Birth', '11 July 1925'],
+        ['Birth Place', 'New York'],
+        ['Death', '21 June 2012 (aged 86)'],
+        ['Military', 'US Navy Veteran, World War II'],
+        ['Burial', 'Calverton National Cemetery, 210 Princeton Blvd, Calverton, NY 11933'],
+      ]},
+      { title: 'Family (Newly Found)', rows: [
+        ['Wife', 'Mary Ann Greeran (maiden name unknown)'],
+        ['Son', 'Timothy Greeran'],
+        ['Siblings', 'Bernard Patrick Greeran (brother) · Kathleen Scott (sister)'],
+        ['Funeral', 'Ascension Church, 86-13 55th Ave, Elmhurst, NY 11373'],
+        ['Funeral Director', 'Papavero Funeral Home, 72-27 Grand Ave, Maspeth, NY 11378'],
+      ]},
+    ],
+    source: 'Papavero Funeral Home obituary June 2012 · QNS Queens death notice June 28 2012 · papaverofuneralhome.com'
+  },
+  'michael-p': {
+    name: 'Michael Patrick Greeran — CPL USMC',
+    sections: [
+      { title: 'Vital Records', rows: [
+        ['Birth', '20 February 1947'],
+        ['Birth Place', 'Queens County, New York'],
+        ['Death', '21 February 2005 (aged 58 — one day after birthday)'],
+        ['Military', 'Corporal (CPL), US Marine Corps, Vietnam War'],
+        ['Gravestone', '"CPL US MARINE CORPS · VIETNAM · BELOVED HUSBAND, FATHER, GRANDFATHER"'],
+        ['Burial', 'Oakdale Memorial Park, Glendora, Los Angeles Co., CA'],
+        ['Burial GPS', '34.1106421, -117.873543'],
+      ]},
+      { title: 'Family', rows: [
+        ['Wife', 'Judy Anne Greeran (b. 7 Jan 1952, d. 23 Apr 2025)'],
+        ['Daughter', 'Michelle Greeran'],
+        ['Grandchildren', '3 (names not in public record)'],
+        ['Father/Step-mother', 'Bernard Greeran &amp; Carol Greeran'],
+        ['Brothers', 'Jerry Greeran · step-brothers John (Cheryl) Young and Mike Young'],
+        ['Sisters', 'Pat (Dunn) · Terry (Miller)'],
+      ]},
+    ],
+    source: 'Find A Grave #192194645 · San Gabriel Valley Tribune Feb 24 2005'
+  },
+  'louise-hewitt': {
+    name: 'Louise Francis Carey Hewitt',
+    sections: [
+      { title: 'Vital Records (Corrected)', rows: [
+        ['Birth', '9 April 1923'],
+        ['Birth Place', 'Pasadena, California (CORRECTED — was "Los Angles L, California" in GEDCOM)'],
+        ['Death', '27 August 2005'],
+        ['Death Place', 'Gladstone Rehabilitation Hospital, Glendora, CA (after Alzheimer\'s)'],
+        ['Burial', 'Forest Lawn, Covina Hills (private family service, Sep 1 2005)'],
+      ]},
+      { title: 'Career &amp; Honors', rows: [
+        ['Occupation', 'Nurse\'s aide, Duarte Unified School District (long-time)'],
+        ['Volunteer', 'PTA President · President, Duarte Community Service Council'],
+        ['Award', 'Foothill Unity Center Heart in Hand Humanitarian Award, 1998'],
+      ]},
+      { title: 'Family', rows: [
+        ['Husband', 'Maurice Frederick Hewitt — married ~1939 (66 years together)'],
+        ['Child 1', 'Terry Lee Milwood (husband Gary Milwood — one L)'],
+        ['Child 2', 'Charles Frederick Hewitt (NOT "Charles J") — wife Lila (Crandall)'],
+        ['Child 3', 'Linda Louise Eiselein (was "Linda Lee Hewitt") — husband James Jr.'],
+        ['Child 4', 'Jean Belle Greeran — husband Gerard "Jerry" T. Greeran, Glendora CA'],
+        ['Child 5', 'Robert David Hewitt (was just "Robert Hewitt")'],
+        ['Grandchildren', '9 total · Great-grandchildren: 7 total (as of 2005)'],
+      ]},
+    ],
+    source: 'SGV Tribune / Legacy.com Sep 9 2005 · legacy.com/us/obituaries/sgvtribune/name/louise-hewitt-obituary?id=26395403 · Guestbook: 14 entries including family members'
+  },
+  'donald-dunn': {
+    name: 'Donald Ralph Dunn',
+    sections: [
+      { title: 'Vital Records (Fully Confirmed)', rows: [
+        ['Birth', '4 April 1948 (EXACT — was "abt 1949" in GEDCOM)'],
+        ['Birth Place', 'Altadena, California (EXACT — was "California" in GEDCOM)'],
+        ['Death', '30 August 2020 (NEWLY FOUND)'],
+        ['Death Place', 'Downey, California (NEWLY FOUND)'],
+        ['Parents', 'Ralph Dunn &amp; Dorothy Louise Holdredge'],
+        ['Career', '40+ years in information technology for healthcare industry'],
+      ]},
+      { title: 'Family', rows: [
+        ['Wife', 'Patricia Greeran Dunn (daughter of Bernard Patrick Greeran)'],
+        ['Son', 'Nathan Dunn (wife Mindy)'],
+        ['Son', 'Jordan Dunn (wife Ashley Hoover)'],
+        ['Daughter', 'Lindsay Dunn'],
+        ['Daughter', 'Lacey Dunn (husband Timon Birkhofer — NEWLY FOUND)'],
+        ['Grandchildren', 'Caleb, Luke, Daniel, Grace, Hope, Isaiah, Andrew (7 total — all NEWLY FOUND)'],
+        ['Sister', 'Carolyn Phillips (née Dunn, husband Rick Phillips — NEWLY FOUND)'],
+      ]},
+    ],
+    source: 'Risher Mortuary &amp; Cremation Service obituary Sep 2020 · rishermortuary.com/obituaries/Donald-Dunn-12/'
+  },
+  'ralph-dunn': {
+    name: 'Ralph Dunn',
+    sections: [
+      { title: 'Vital Records', rows: [
+        ['Birth', '14 August 1918'],
+        ['Birth Place', 'Mounds, Pulaski County, Illinois'],
+        ['Death', '13 March 2006'],
+        ['Death Place', 'Pasadena, California (at home)'],
+        ['Military', 'US Navy, World War II (newly confirmed)'],
+        ['Burial', 'Altadena, Los Angeles County, CA'],
+        ['Education', 'Graduated Muir Tech, Pasadena CA'],
+        ['Career', 'US Steel, hydraulics engineer; later worldwide engineering consultant'],
+      ]},
+      { title: 'Family', rows: [
+        ['Wife', 'Dorothy Louise Holdredge (maiden name NEWLY FOUND)'],
+        ['Marriage', '~1941 — celebrated 65th Anniversary in 2006'],
+        ['Daughter', 'Carolyn L. Dunn → Phillips (husband Rick Phillips)'],
+        ['Son', 'Donald Ralph Dunn (4 Apr 1948–30 Aug 2020)'],
+        ['Grandchildren', 'Shelley Coscarelli (Ken), David Phillips (Kristy), Nathan, Jordan, Lindsay, Lacey Dunn, Morgan Phillips'],
+        ['Great-grandchildren', 'Amelia, Noah, Daniel, Victoria Coscarelli · Morgan Phillips'],
+        ['Memorial', 'Arcadia Friends Community Church, Mar 25 2006'],
+      ]},
+    ],
+    source: 'Pasadena Star News obituary Mar 22 2006 · pasadenastarnews.com/obituaries/ralph-dunn-ca/'
+  },
+};
+
+// Add remaining detail stubs
+const STUB_IDS = ['mary-conalty','hugh','catherine-wife','john-j','thomas-h','kathleen-h',
+  'thomas-bp','gerard','patricia','terry-miller','daniel','timothy','mary-ann',
+  'terry-milwood','charles-hewitt','linda-eiselein','jeanie-belle','robert-hewitt',
+  'joel-carey','elizabeth-stanley','luther-carey','francis-carey','daisy-carey','niley-carey',
+  'george-carey','mima-carey','dorothy-dunn','carolyn-phillips','rick-phillips',
+  'jeanette-morin','bernard-crandell','thelma-crandell','lila-hewitt','wellington-crandell',
+  'foster-emmons','georgia-emmons','myrna-walters','kipp-emmons','elzie-pearson','maurice'];
+
+STUB_IDS.forEach(id => {
+  if (!DETAILS[id]) DETAILS[id] = null; // will show generic
+});
+
+function showDetail(id) {
+  const panel = document.getElementById('detail-panel');
+  const nameEl = document.getElementById('dp-name');
+  const bodyEl = document.getElementById('dp-body');
+  panel.classList.remove('hidden');
+
+  const d = DETAILS[id];
+  if (!d) {
+    nameEl.textContent = id.replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+    bodyEl.innerHTML = '<div style="grid-column:1/-1;font-size:.72rem;color:var(--muted);padding:8px">Click the Left Sidebar cards or tabs for detailed information on this person. Full data available in the enriched GEDCOM file.</div>';
+    return;
+  }
+  nameEl.textContent = d.name;
+  bodyEl.innerHTML = d.sections.map(sec =>
+    `<div class="dp-section">
+      <div class="dp-section-title">${sec.title}</div>
+      ${sec.rows.map(r => `<div class="dp-row"><span class="dp-label">${r[0]}</span><span class="dp-val">${r[1]}</span></div>`).join('')}
+    </div>`
+  ).join('') + `<div class="dp-section" style="grid-column:1/-1"><div class="dp-section-title">Source</div><div class="dp-source">${d.source}</div></div>`;
+
+  panel.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function closeDetail() {
+  document.getElementById('detail-panel').classList.add('hidden');
+}
+
+// ── Search ──
+const SEARCH_DATA = [
+  {name:'Bernard Patrick Greeran',sub:'b. 21 Jun 1924 · d. 3 Feb 2017 · Covina CA',id:'bp',badge:'✓ Researched'},
+  {name:'James Thomas Greeran',sub:'b. 11 Jul 1925 · d. 21 Jun 2012 · Elmhurst NY',id:'james-t',badge:'✓ Wife+Son found'},
+  {name:'Michael Patrick Greeran',sub:'b. 20 Feb 1947 · d. 21 Feb 2005 · CPL USMC Vietnam',id:'michael-p',badge:'✓ Military'},
+  {name:'Louise Frances Carey Hewitt',sub:'b. 9 Apr 1923 Pasadena · d. 27 Aug 2005 Glendora',id:'louise-hewitt',badge:'✓ Corrected'},
+  {name:'Ralph Dunn',sub:'b. 14 Aug 1918 · d. 13 Mar 2006 · USN WWII',id:'ralph-dunn',badge:'✓ Military'},
+  {name:'Donald Ralph Dunn',sub:'b. 4 Apr 1948 Altadena · d. 30 Aug 2020 Downey',id:'donald-dunn',badge:'✓ Exact dates'},
+  {name:'Bernard Greeran Sr.',sub:'~1861 · Ballymacarney Co. Down · 16 children',id:'bernard-sr',badge:'✓ Census'},
+  {name:'Mary Conalty Greeran',sub:'~1859 · 16 children born / 15 died pre-1911',id:'mary-conalty',badge:'🚨 Critical'},
+  {name:'Hugh Greeran',sub:'~1897 · Ballymackilreiny · d. New York',id:'hugh',badge:'✓ Corrected'},
+  {name:'Dorothy Louise Holdredge Dunn',sub:'maiden name: Holdredge · b. ~1922 · d. 27 Mar 2015',id:'dorothy-dunn',badge:'✓ Maiden name'},
+  {name:'Timothy Greeran',sub:'Son of James T. + Mary Ann Greeran',id:'timothy',badge:'✦ New found'},
+  {name:'Mary Ann Greeran',sub:'Wife of James T. Greeran · Queens/Elmhurst NY',id:'mary-ann',badge:'✦ New found'},
+  {name:'Terry Miller (née Greeran)',sub:'Daughter of Bernard Patrick · married name Miller',id:'terry-miller',badge:'✦ Name found'},
+  {name:'Charles Frederick Hewitt',sub:'Was "Charles J Hewitt" — middle name Frederick',id:'charles-hewitt',badge:'✓ Corrected'},
+  {name:'Robert David Hewitt',sub:'Was "Robert Hewitt" — middle name David',id:'robert-hewitt',badge:'✓ Corrected'},
+  {name:'Terry Lee Milwood',sub:'Husband Gary Milwood (one L not two)',id:'terry-milwood',badge:'✓ Spelling'},
+  {name:'Foster Noel Emmons',sub:'b. 25 Sep 1900 · d. Sep 1969 · Sunset Cemetery Manhattan KS',id:'foster-emmons',badge:'✓ SSDI'},
+  {name:'Georgia Elizabeth Carey Emmons',sub:'b. 22 Feb 1901 Manhattan KS · d. 15 Jan 1999 Topeka',id:'georgia-emmons',badge:'✓ Confirmed'},
+  {name:'Patricia Greeran Dunn',sub:'Wife of Donald Ralph Dunn · 4 children',id:'patricia',badge:'✓ Confirmed'},
+  {name:'Gerard Jerry Greeran',sub:'~1955 · married Jeanie Belle Hewitt · son Steven',id:'gerard',badge:'✓ Confirmed'},
+];
+
+const searchEl = document.getElementById('search');
+const dropEl = document.getElementById('search-drop');
+
+searchEl.addEventListener('input', () => {
+  const q = searchEl.value.trim().toLowerCase();
+  dropEl.innerHTML = '';
+  if (!q) { dropEl.style.display='none'; return; }
+  const hits = SEARCH_DATA.filter(d => d.name.toLowerCase().includes(q) || d.sub.toLowerCase().includes(q)).slice(0,10);
+  if (!hits.length) { dropEl.style.display='none'; return; }
+  hits.forEach(h => {
+    const div = document.createElement('div');
+    div.className = 'sdrop-item';
+    div.innerHTML = `<div class="sdrop-name">${h.name} <span class="sdrop-badge b-new" style="background:rgba(201,168,76,.15);color:var(--gold);border:1px solid var(--border);font-size:.52rem;padding:1px 5px;border-radius:8px">${h.badge}</span></div><div class="sdrop-sub">${h.sub}</div>`;
+    div.onclick = () => { showDetail(h.id); dropEl.style.display='none'; searchEl.value=''; };
+    dropEl.appendChild(div);
+  });
+  dropEl.style.display='block';
+});
+document.addEventListener('click', e => { if (!e.target.closest('#search-wrap')) dropEl.style.display='none'; });
+searchEl.addEventListener('keydown', e => { if (e.key==='Escape') { dropEl.style.display='none'; searchEl.value=''; }});
+
+// ── Auto-open first accordion body ──
+document.querySelectorAll('.acc-body.open').forEach(b => b.style.maxHeight = '2000px');
+</script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a124b6a0af205e59',t:'MTc4MjU2NjA1MQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>

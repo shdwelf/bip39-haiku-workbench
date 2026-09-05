@@ -10,6 +10,17 @@ import { usePersistentState } from "../shell/hooks";
 import Collapsible from "../shell/Collapsible";
 import { PipeOutButton } from "../pipe/PipeButtons";
 import { usePipeReceiver } from "../pipe/PipeProvider";
+import {
+  canServe,
+  FS_ROOT,
+  genealogyChapterBody,
+  importGenealogy,
+  importVaultJson,
+  serverRunning,
+  servedPath,
+  startServer,
+  stopServer,
+} from "../lib/bookImport";
 
 const TOOL_ID = "book";
 const TOOL_NAME = "Autobiography";
@@ -62,6 +73,8 @@ export default function Book() {
   const [busy, setBusy] = useState<string | null>(null);
   const [preview, setPreview] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
+  const vaultInput = useRef<HTMLInputElement>(null);
+  const [serving, setServing] = useState(false);
   const bodyRef = useRef<HTMLTextAreaElement>(null);
 
   const active = chapters.find((c) => c.id === activeId) ?? chapters[0];
@@ -72,6 +85,7 @@ export default function Book() {
 
   useEffect(() => {
     void refresh();
+    void serverRunning().then(setServing);
   }, [refresh]);
 
   // Anything piped at the book becomes a text attachment.
@@ -153,6 +167,61 @@ export default function Book() {
       ta.focus();
       ta.selectionStart = ta.selectionEnd = start + token.length;
     });
+  };
+
+  const onImportVault = async (list: FileList | null) => {
+    const f = list?.[0];
+    if (!f) return;
+    setBusy("Reading vault export…");
+    try {
+      const res = await importVaultJson(await f.text());
+      await refresh();
+      setBusy(
+        `Recovered ${res.added} file${res.added === 1 ? "" : "s"} into /vault` +
+          (res.skipped ? ` · ${res.skipped} already present` : "")
+      );
+    } catch (e) {
+      setBusy((e as Error).message);
+    }
+    window.setTimeout(() => setBusy(null), 6000);
+  };
+
+  const onImportGenealogy = async () => {
+    setBusy("Filing the research documents…");
+    try {
+      const res = await importGenealogy();
+      await refresh();
+      if (res.added > 0 && !chapters.some((c) => c.title === "The research file")) {
+        setChapters((prev) => [
+          ...prev,
+          { id: newId(), title: "The research file", body: genealogyChapterBody() },
+        ]);
+      }
+      setBusy(
+        `Filed ${res.added} document${res.added === 1 ? "" : "s"} under /genealogy` +
+          (res.skipped ? ` · ${res.skipped} already present` : "")
+      );
+    } catch (e) {
+      setBusy((e as Error).message);
+    }
+    window.setTimeout(() => setBusy(null), 6000);
+  };
+
+  const toggleServer = async () => {
+    try {
+      if (serving) {
+        await stopServer();
+        setServing(false);
+        setBusy("Filesystem server stopped.");
+      } else {
+        await startServer();
+        setServing(true);
+        setBusy(`Serving the filesystem at ${FS_ROOT}`);
+      }
+    } catch (e) {
+      setBusy((e as Error).message);
+    }
+    window.setTimeout(() => setBusy(null), 6000);
   };
 
   const exportBook = async () => {
@@ -316,6 +385,103 @@ export default function Book() {
           )}
 
           <Collapsible
+            storageKey="bhw.book.import"
+            title="Import & serve"
+            icon="🗄"
+            subtitle={serving ? `serving at ${FS_ROOT}` : "not serving"}
+          >
+            <div className="space-y-3">
+              <div>
+                <p className="mb-1 text-xs font-semibold text-zinc-200">
+                  Recover the original book vault
+                </p>
+                <p className="mb-2 text-[11px] leading-relaxed text-zinc-500">
+                  The old book kept drafts in <code>localStorage</code> under{" "}
+                  <code className="text-cyan-400">greeran-book-vault-v1</code>, which
+                  is per-origin — open the book from the origin you wrote on, press
+                  its <em>Export vault</em> button, then load the JSON here.
+                </p>
+                <input
+                  ref={vaultInput}
+                  type="file"
+                  accept="application/json,.json"
+                  onChange={(e) => {
+                    void onImportVault(e.target.files);
+                    e.target.value = "";
+                  }}
+                  className="hidden"
+                />
+                <button
+                  onClick={() => vaultInput.current?.click()}
+                  className="rounded-lg bg-zinc-800 px-3 py-1.5 text-xs font-semibold text-zinc-100 transition hover:bg-zinc-700"
+                >
+                  ⬆ Import vault JSON
+                </button>
+              </div>
+
+              <div className="border-t border-zinc-800 pt-3">
+                <p className="mb-1 text-xs font-semibold text-zinc-200">
+                  Genealogy research
+                </p>
+                <p className="mb-2 text-[11px] leading-relaxed text-zinc-500">
+                  Files the Seize Quartiers, family tree, service map and
+                  bibliography under <code>/genealogy</code> as attachments, and adds
+                  a chapter that cites each one rather than reprinting it.
+                </p>
+                <button
+                  onClick={onImportGenealogy}
+                  className="rounded-lg bg-zinc-800 px-3 py-1.5 text-xs font-semibold text-zinc-100 transition hover:bg-zinc-700"
+                >
+                  📚 File the research documents
+                </button>
+              </div>
+
+              <div className="border-t border-zinc-800 pt-3">
+                <p className="mb-1 text-xs font-semibold text-zinc-200">
+                  Serve the filesystem
+                </p>
+                <p className="mb-2 text-[11px] leading-relaxed text-zinc-500">
+                  A port of ACME Labs&rsquo; <code>micro_httpd</code> to a Service
+                  Worker: attachments get real URLs under{" "}
+                  <code className="text-cyan-400">{FS_ROOT}</code> instead of
+                  temporary blob handles, with directory listings, index.html and
+                  &ldquo;..&rdquo; protection. Needs a secure origin — this is the
+                  same reason a page opened from <code>file://</code> gets no
+                  microphone.
+                </p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    onClick={toggleServer}
+                    disabled={!canServe() && !serving}
+                    className={`rounded-lg px-3 py-1.5 text-xs font-bold transition disabled:opacity-40 ${
+                      serving
+                        ? "bg-rose-600 text-white hover:bg-rose-500"
+                        : "bg-emerald-500 text-zinc-950 hover:bg-emerald-400"
+                    }`}
+                  >
+                    {serving ? "■ Stop serving" : "▶ Start serving"}
+                  </button>
+                  {serving && (
+                    <a
+                      href={FS_ROOT}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="rounded-lg border border-zinc-700 px-3 py-1.5 text-xs text-cyan-300 transition hover:bg-zinc-800"
+                    >
+                      ↗ Browse {FS_ROOT}
+                    </a>
+                  )}
+                  {!canServe() && (
+                    <span className="text-[11px] text-amber-400">
+                      Not a secure context — serving unavailable here.
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </Collapsible>
+
+          <Collapsible
             storageKey="bhw.book.files"
             title="Files"
             icon="📎"
@@ -364,6 +530,7 @@ export default function Book() {
                   <FileRow
                     key={f.id}
                     entry={f}
+                    serving={serving}
                     onInsert={() => insertRef(f)}
                     onChanged={refresh}
                   />
@@ -394,10 +561,12 @@ function Usage({ files }: { files: VfsEntry[] }) {
 
 function FileRow({
   entry,
+  serving,
   onInsert,
   onChanged,
 }: {
   entry: VfsEntry;
+  serving: boolean;
   onInsert: () => void;
   onChanged: () => void;
 }) {
@@ -451,6 +620,16 @@ function FileRow({
         </p>
         {entry.caption && (
           <p className="truncate text-[10px] italic text-zinc-400">{entry.caption}</p>
+        )}
+        {serving && (
+          <a
+            href={servedPath(entry)}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-0.5 block truncate font-mono text-[10px] text-cyan-400 hover:underline"
+          >
+            {servedPath(entry)}
+          </a>
         )}
         <div className="mt-1 flex flex-wrap gap-1">
           <button
