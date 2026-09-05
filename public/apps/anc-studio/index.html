@@ -1,0 +1,1438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ANC Studio Ultra - HTML5 Active Noise Control Lab</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+    :root {
+      color-scheme: dark;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background:
+        radial-gradient(circle at 15% 20%, rgba(14, 165, 233, 0.16), transparent 30%),
+        radial-gradient(circle at 85% 15%, rgba(99, 102, 241, 0.14), transparent 28%),
+        radial-gradient(circle at 50% 100%, rgba(34, 211, 238, 0.10), transparent 36%),
+        linear-gradient(180deg, #050816 0%, #09111f 52%, #050816 100%);
+      min-height: 100vh;
+    }
+
+    .glass {
+      background: rgba(10, 16, 30, 0.62);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(148, 163, 184, 0.14);
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.28);
+    }
+
+    .glow-live {
+      box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.22), 0 0 36px rgba(34, 211, 238, 0.20), 0 0 96px rgba(59, 130, 246, 0.12);
+    }
+
+    .mode-btn,
+    .filter-btn,
+    .toggle-chip,
+    .preset-btn {
+      transition: all 0.22s ease;
+    }
+
+    .mode-btn.active,
+    .filter-btn.active,
+    .toggle-chip.active,
+    .preset-btn.active {
+      background: linear-gradient(135deg, rgba(8, 145, 178, 0.45), rgba(37, 99, 235, 0.42));
+      border-color: rgba(103, 232, 249, 0.5);
+      box-shadow: 0 0 22px rgba(34, 211, 238, 0.16);
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+    }
+
+    .status-dot.live {
+      animation: pulseDot 1.2s ease-in-out infinite;
+    }
+
+    @keyframes pulseDot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.82); }
+    }
+
+    .pulse-ring {
+      animation: ring 1.7s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+    }
+
+    @keyframes ring {
+      0% { transform: scale(0.75); opacity: 0.52; }
+      80%, 100% { transform: scale(1.38); opacity: 0; }
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 7px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, rgba(14, 165, 233, 0.26), rgba(51, 65, 85, 0.95));
+      cursor: pointer;
+      outline: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #67e8f9, #3b82f6);
+      box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.14), 0 0 18px rgba(34, 211, 238, 0.42);
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      border: none;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #67e8f9, #3b82f6);
+      box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.14), 0 0 18px rgba(34, 211, 238, 0.42);
+    }
+
+    select {
+      appearance: none;
+      background-image: linear-gradient(45deg, transparent 50%, #67e8f9 50%), linear-gradient(135deg, #67e8f9 50%, transparent 50%);
+      background-position: calc(100% - 18px) calc(50% - 3px), calc(100% - 12px) calc(50% - 3px);
+      background-size: 6px 6px, 6px 6px;
+      background-repeat: no-repeat;
+    }
+
+    .mini-log::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .mini-log::-webkit-scrollbar-thumb {
+      background: rgba(51, 65, 85, 0.9);
+      border-radius: 999px;
+    }
+
+    .badge-soft {
+      background: rgba(51, 65, 85, 0.36);
+      border: 1px solid rgba(100, 116, 139, 0.28);
+    }
+
+    .metric-card {
+      background: linear-gradient(180deg, rgba(15, 23, 42, 0.82), rgba(15, 23, 42, 0.45));
+      border: 1px solid rgba(100, 116, 139, 0.16);
+    }
+
+    .grid-auto {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+      gap: 0.5rem;
+    }
+  </style>
+</head>
+<body class="text-white overflow-x-hidden">
+  <div class="min-h-screen px-4 py-6 md:px-6 md:py-8">
+    <div class="max-w-6xl mx-auto">
+      <div class="text-center mb-6 md:mb-8">
+        <div class="inline-flex items-center gap-3 mb-3 px-4 py-2 rounded-full badge-soft">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center shadow-lg shadow-cyan-500/20">
+            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/>
+            </svg>
+          </div>
+          <div class="text-left">
+            <div class="text-xs tracking-[0.22em] uppercase text-cyan-400 font-semibold">HTML5 Web Audio Lab</div>
+            <div class="text-lg md:text-xl font-bold text-slate-100">ANC Studio Ultra</div>
+          </div>
+        </div>
+        <h1 class="text-3xl md:text-5xl font-extrabold tracking-tight mb-2 bg-gradient-to-r from-cyan-300 via-sky-300 to-indigo-300 bg-clip-text text-transparent">Active Noise Control Research Demo</h1>
+        <p class="max-w-3xl mx-auto text-sm md:text-base text-slate-400 leading-relaxed">
+          Research-backed single-file ANC playground using <strong class="text-slate-200">AudioWorklet</strong>,
+          <strong class="text-slate-200">BiquadFilterNode</strong>,
+          <strong class="text-slate-200">DelayNode</strong>, and a safety
+          <strong class="text-slate-200">DynamicsCompressorNode</strong>. Best for steady low-frequency rumble, not sudden explosive impulses.
+        </p>
+      </div>
+
+      <div class="grid xl:grid-cols-[1.55fr_1fr] gap-5 items-start">
+        <section id="mainCard" class="glass rounded-3xl p-4 md:p-5 glow-live transition-all duration-300">
+          <div class="flex flex-col gap-4">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <div class="flex items-center gap-3 mb-1">
+                  <div id="statusDot" class="status-dot bg-slate-500"></div>
+                  <span id="statusText" class="font-medium text-slate-300">System ready</span>
+                </div>
+                <p id="statusSubtext" class="text-xs text-slate-500">Press Start to request microphone access and initialize the audio graph.</p>
+              </div>
+              <div class="flex flex-wrap gap-2 text-[11px]">
+                <span id="httpsBadge" class="badge-soft rounded-full px-3 py-1 text-slate-300">HTTPS required</span>
+                <span id="audioWorkletBadge" class="badge-soft rounded-full px-3 py-1 text-cyan-300">AudioWorklet pending</span>
+                <span class="badge-soft rounded-full px-3 py-1 text-slate-300">Wired headphones recommended</span>
+              </div>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+              <span class="badge-soft rounded-full px-3 py-1">🎤 Mic</span>
+              <span>→</span>
+              <span id="pipelineFilter" class="badge-soft rounded-full px-3 py-1">🔽 Lowpass</span>
+              <span>→</span>
+              <span id="pipelineMode" class="badge-soft rounded-full px-3 py-1">🔊 Phase invert</span>
+              <span>→</span>
+              <span class="badge-soft rounded-full px-3 py-1">⏱ Delay align</span>
+              <span>→</span>
+              <span class="badge-soft rounded-full px-3 py-1">🛡 Safety limiter</span>
+              <span>→</span>
+              <span class="badge-soft rounded-full px-3 py-1">🔊 Output</span>
+            </div>
+
+            <div class="relative rounded-2xl overflow-hidden border border-slate-800/80 bg-slate-950/60">
+              <canvas id="visualizer" class="w-full h-64 md:h-72"></canvas>
+              <div id="canvasOverlay" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/72">
+                <div class="w-16 h-16 rounded-2xl bg-cyan-500/10 border border-cyan-400/20 flex items-center justify-center mb-3">
+                  <svg class="w-8 h-8 text-cyan-300/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+                  </svg>
+                </div>
+                <div class="text-sm font-semibold text-slate-200">Analyzer idle</div>
+                <div class="text-xs text-slate-500 mt-1">Start the engine to see waveform, spectrum, and cutoff markers.</div>
+              </div>
+              <div id="calibrationOverlay" class="hidden absolute inset-0 bg-slate-950/68 backdrop-blur-[1px]">
+                <div class="absolute inset-x-5 top-5">
+                  <div class="flex items-center justify-between text-xs mb-2">
+                    <span class="text-cyan-300 font-medium">Analyzing ambient noise profile…</span>
+                    <span id="calibrationPercent" class="text-slate-300 font-mono">0%</span>
+                  </div>
+                  <div class="h-2 rounded-full bg-slate-800 overflow-hidden">
+                    <div id="calibrationBar" class="h-full w-0 bg-gradient-to-r from-cyan-400 to-blue-500"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid md:grid-cols-[1fr_auto] gap-3 items-stretch">
+              <div class="grid grid-cols-2 gap-2">
+                <button id="startBtn" class="relative rounded-2xl px-4 py-4 font-semibold text-base bg-gradient-to-r from-cyan-600 to-blue-500 hover:from-cyan-500 hover:to-blue-400 shadow-lg shadow-cyan-600/20 transition hover:scale-[1.01] active:scale-[0.99] overflow-hidden">
+                  <div id="startPulse" class="absolute inset-0 opacity-0 bg-cyan-400/20 rounded-2xl"></div>
+                  <span id="startBtnText" class="relative z-10">Start Noise Cancelation</span>
+                </button>
+                <button id="calibrateBtn" class="rounded-2xl px-4 py-4 font-semibold text-base bg-slate-800/70 hover:bg-slate-700/80 border border-slate-700 text-slate-100 transition">
+                  Smart Calibrate
+                </button>
+              </div>
+              <div class="glass rounded-2xl px-4 py-3 flex flex-col justify-center min-w-[210px]">
+                <div class="text-[11px] uppercase tracking-[0.18em] text-slate-500 mb-1">Current Profile</div>
+                <div id="profileName" class="text-lg font-bold text-cyan-300">Manual</div>
+                <div id="profileHint" class="text-xs text-slate-500 mt-1">Tune filters yourself or run Smart Calibrate.</div>
+              </div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-3">
+              <div class="glass rounded-2xl p-3.5">
+                <div class="flex items-center justify-between mb-2">
+                  <div>
+                    <div class="text-sm font-semibold text-slate-100">Cancellation Mode</div>
+                    <div class="text-[11px] text-slate-500">Switch between direct phase inversion and adaptive NLMS filtering.</div>
+                  </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                  <button id="modePhase" class="mode-btn active rounded-xl border border-slate-700 px-3 py-3 text-left">
+                    <div class="font-semibold text-sm">Phase Invert</div>
+                    <div class="text-[11px] text-slate-500 mt-1">Simple 180° broadband inversion</div>
+                  </button>
+                  <button id="modeAdaptive" class="mode-btn rounded-xl border border-slate-700 px-3 py-3 text-left">
+                    <div class="font-semibold text-sm">Adaptive NLMS</div>
+                    <div class="text-[11px] text-slate-500 mt-1">Normalized learning on audio thread</div>
+                  </button>
+                </div>
+              </div>
+
+              <div class="glass rounded-2xl p-3.5">
+                <div class="text-sm font-semibold text-slate-100 mb-1">Noise Presets</div>
+                <div class="text-[11px] text-slate-500 mb-3">Research-informed starting points for common low-frequency environments.</div>
+                <div class="grid grid-cols-[1fr_auto] gap-2">
+                  <select id="presetSelect" class="rounded-xl border border-slate-700 bg-slate-900/80 px-3 py-3 text-sm text-slate-100 pr-9">
+                    <option value="Manual">Manual</option>
+                    <option value="Crowd Rumble">Crowd Rumble</option>
+                    <option value="Bass / Sub">Bass / Sub</option>
+                    <option value="Air Conditioner">Air Conditioner</option>
+                    <option value="Vocal / Speech">Vocal / Speech</option>
+                    <option value="Hiss / Room">Hiss / Room</option>
+                  </select>
+                  <button id="applyPresetBtn" class="preset-btn rounded-xl border border-cyan-500/40 px-4 py-3 text-sm font-semibold text-cyan-300 hover:bg-cyan-500/10">Apply</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="glass rounded-2xl p-4">
+              <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+                <div>
+                  <div class="text-sm font-semibold text-slate-100">Frequency Targeting</div>
+                  <div class="text-[11px] text-slate-500">Target the band most likely to contain the unwanted rumble or steady tone.</div>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                  <button class="filter-btn active rounded-xl border border-cyan-500/40 px-3 py-2 text-xs font-medium" data-filter="lowpass">Low Pass</button>
+                  <button class="filter-btn rounded-xl border border-slate-700 px-3 py-2 text-xs font-medium" data-filter="highpass">High Pass</button>
+                  <button class="filter-btn rounded-xl border border-slate-700 px-3 py-2 text-xs font-medium" data-filter="bandpass">Band Pass</button>
+                  <button class="filter-btn rounded-xl border border-slate-700 px-3 py-2 text-xs font-medium" data-filter="notch">Notch</button>
+                </div>
+              </div>
+
+              <div class="grid md:grid-cols-2 gap-4">
+                <div>
+                  <div class="flex justify-between text-[11px] text-slate-400 mb-1">
+                    <span>Cutoff / Center</span>
+                    <span id="cutoffLabel" class="text-cyan-300 font-mono">500 Hz</span>
+                  </div>
+                  <input id="cutoffSlider" type="range" min="20" max="8000" step="10" value="500" />
+                </div>
+                <div>
+                  <div class="flex justify-between text-[11px] text-slate-400 mb-1">
+                    <span>Resonance (Q)</span>
+                    <span id="qLabel" class="text-cyan-300 font-mono">0.7</span>
+                  </div>
+                  <input id="qSlider" type="range" min="0.1" max="20" step="0.1" value="0.7" />
+                </div>
+                <div>
+                  <div class="flex justify-between text-[11px] text-slate-400 mb-1">
+                    <span>Inversion Strength</span>
+                    <span id="strengthLabel" class="text-cyan-300 font-mono">-9.0 dB</span>
+                  </div>
+                  <input id="strengthSlider" type="range" min="0" max="24" step="0.5" value="9" />
+                </div>
+                <div>
+                  <div class="flex justify-between text-[11px] text-slate-400 mb-1">
+                    <span>Delay Compensation</span>
+                    <span id="delayLabel" class="text-cyan-300 font-mono">0.0 ms</span>
+                  </div>
+                  <input id="delaySlider" type="range" min="0" max="50" step="0.1" value="0" />
+                </div>
+                <div>
+                  <div class="flex justify-between text-[11px] text-slate-400 mb-1">
+                    <span>Adaptive Learning Rate</span>
+                    <span id="learningLabel" class="text-cyan-300 font-mono">0.060</span>
+                  </div>
+                  <input id="learningSlider" type="range" min="1" max="100" step="1" value="30" />
+                </div>
+                <div>
+                  <div class="flex justify-between text-[11px] text-slate-400 mb-1">
+                    <span>Adaptive Clip Ceiling</span>
+                    <span id="clipLabel" class="text-cyan-300 font-mono">0.80</span>
+                  </div>
+                  <input id="clipSlider" type="range" min="0.1" max="1" step="0.01" value="0.8" />
+                </div>
+              </div>
+
+              <div class="grid md:grid-cols-3 gap-2 mt-4">
+                <button id="freezeBtn" class="toggle-chip rounded-xl border border-slate-700 px-3 py-3 text-left">
+                  <div class="text-xs font-semibold text-slate-100">Freeze Learning</div>
+                  <div class="text-[11px] text-slate-500 mt-1">Keep current adaptive weights</div>
+                </button>
+                <button id="limiterBtn" class="toggle-chip active rounded-xl border border-cyan-500/40 px-3 py-3 text-left">
+                  <div class="text-xs font-semibold text-slate-100">Safety Limiter</div>
+                  <div class="text-[11px] text-slate-500 mt-1">Protect against sudden spikes</div>
+                </button>
+                <button id="resetAdaptiveBtn" class="toggle-chip rounded-xl border border-slate-700 px-3 py-3 text-left">
+                  <div class="text-xs font-semibold text-slate-100">Reset Adaptive State</div>
+                  <div class="text-[11px] text-slate-500 mt-1">Clear learned filter memory</div>
+                </button>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div class="metric-card rounded-2xl p-3">
+                <div class="text-[11px] uppercase tracking-[0.16em] text-slate-500 mb-1">Latency</div>
+                <div id="latencyValue" class="text-2xl font-bold text-cyan-300 font-mono">--</div>
+                <div class="text-[11px] text-slate-500 mt-1">base + output</div>
+              </div>
+              <div class="metric-card rounded-2xl p-3">
+                <div class="text-[11px] uppercase tracking-[0.16em] text-slate-500 mb-1">Peak Freq</div>
+                <div id="peakValue" class="text-2xl font-bold text-violet-300 font-mono">--</div>
+                <div class="text-[11px] text-slate-500 mt-1">dominant band</div>
+              </div>
+              <div class="metric-card rounded-2xl p-3">
+                <div class="text-[11px] uppercase tracking-[0.16em] text-slate-500 mb-1">Input Level</div>
+                <div id="levelValue" class="text-2xl font-bold text-emerald-300 font-mono">--</div>
+                <div class="text-[11px] text-slate-500 mt-1">RMS estimate</div>
+              </div>
+              <div class="metric-card rounded-2xl p-3">
+                <div class="text-[11px] uppercase tracking-[0.16em] text-slate-500 mb-1">Limiter GR</div>
+                <div id="limiterValue" class="text-2xl font-bold text-amber-300 font-mono">--</div>
+                <div class="text-[11px] text-slate-500 mt-1">gain reduction</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <aside class="flex flex-col gap-5">
+          <section class="glass rounded-3xl p-4 md:p-5">
+            <div class="flex items-center justify-between gap-3 mb-3">
+              <div>
+                <h2 class="text-lg font-bold text-slate-100">Research Notes</h2>
+                <p class="text-xs text-slate-500 mt-1">Applied best practices from current Web Audio documentation.</p>
+              </div>
+              <div class="text-[11px] px-3 py-1 rounded-full badge-soft text-cyan-300">2026 build</div>
+            </div>
+            <div class="space-y-3 text-sm">
+              <div class="rounded-2xl border border-slate-800 bg-slate-900/40 p-3">
+                <div class="font-semibold text-slate-100 mb-1">1. AudioWorklet for real-time DSP</div>
+                <p class="text-slate-400 text-xs leading-relaxed">Adaptive mode runs off the main thread for lower glitch risk than deprecated ScriptProcessor patterns.</p>
+              </div>
+              <div class="rounded-2xl border border-slate-800 bg-slate-900/40 p-3">
+                <div class="font-semibold text-slate-100 mb-1">2. Biquad frequency targeting</div>
+                <p class="text-slate-400 text-xs leading-relaxed">Low-pass, high-pass, band-pass, and notch filters let you isolate steady crowd rumble, AC hum, or hiss before inversion.</p>
+              </div>
+              <div class="rounded-2xl border border-slate-800 bg-slate-900/40 p-3">
+                <div class="font-semibold text-slate-100 mb-1">3. Delay compensation</div>
+                <p class="text-slate-400 text-xs leading-relaxed">Because ANC depends on timing alignment, the app includes a small output delay adjustment window to experiment with phase arrival.</p>
+              </div>
+              <div class="rounded-2xl border border-slate-800 bg-slate-900/40 p-3">
+                <div class="font-semibold text-slate-100 mb-1">4. Safety limiter</div>
+                <p class="text-slate-400 text-xs leading-relaxed">A compressor/limiter after the anti-noise path helps tame sudden peaks and reduce clipping risk.</p>
+              </div>
+            </div>
+          </section>
+
+          <section class="glass rounded-3xl p-4 md:p-5">
+            <div class="flex items-center justify-between mb-3">
+              <div>
+                <h2 class="text-lg font-bold text-slate-100">Live Diagnostics</h2>
+                <p class="text-xs text-slate-500 mt-1">Helpful when tuning filter shape, delay, and adaptive behavior.</p>
+              </div>
+            </div>
+            <div class="grid-auto text-xs mb-4">
+              <div class="rounded-xl border border-slate-800 bg-slate-900/45 p-3">
+                <div class="text-slate-500 mb-1">Mode</div>
+                <div id="diagMode" class="text-cyan-300 font-semibold">Phase Invert</div>
+              </div>
+              <div class="rounded-xl border border-slate-800 bg-slate-900/45 p-3">
+                <div class="text-slate-500 mb-1">Filter</div>
+                <div id="diagFilter" class="text-cyan-300 font-semibold">Lowpass</div>
+              </div>
+              <div class="rounded-xl border border-slate-800 bg-slate-900/45 p-3">
+                <div class="text-slate-500 mb-1">Cutoff</div>
+                <div id="diagCutoff" class="text-cyan-300 font-semibold">500 Hz</div>
+              </div>
+              <div class="rounded-xl border border-slate-800 bg-slate-900/45 p-3">
+                <div class="text-slate-500 mb-1">Delay</div>
+                <div id="diagDelay" class="text-cyan-300 font-semibold">0.0 ms</div>
+              </div>
+              <div class="rounded-xl border border-slate-800 bg-slate-900/45 p-3">
+                <div class="text-slate-500 mb-1">Learn</div>
+                <div id="diagLearning" class="text-cyan-300 font-semibold">0.060</div>
+              </div>
+              <div class="rounded-xl border border-slate-800 bg-slate-900/45 p-3">
+                <div class="text-slate-500 mb-1">Output Gain</div>
+                <div id="diagStrength" class="text-cyan-300 font-semibold">-9.0 dB</div>
+              </div>
+            </div>
+
+            <div class="rounded-2xl border border-slate-800 bg-slate-900/40 p-3">
+              <div class="flex items-center justify-between mb-2">
+                <div class="text-sm font-semibold text-slate-100">Event Log</div>
+                <button id="clearLogBtn" class="text-[11px] text-slate-400 hover:text-slate-200">Clear</button>
+              </div>
+              <div id="logPanel" class="mini-log max-h-56 overflow-auto space-y-2 text-xs"></div>
+            </div>
+          </section>
+
+          <section class="rounded-3xl border border-amber-400/18 bg-amber-500/8 p-4 md:p-5">
+            <div class="flex gap-3">
+              <div class="w-9 h-9 rounded-xl bg-amber-500/14 border border-amber-400/20 flex items-center justify-center flex-shrink-0">
+                <svg class="w-4 h-4 text-amber-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-7.938 4h15.876c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L2.33 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+              </div>
+              <div>
+                <h2 class="text-sm font-bold text-amber-200 mb-1">Safety + Reality Check</h2>
+                <p class="text-xs text-amber-100/78 leading-relaxed mb-2">
+                  This demo cannot replace certified hearing protection. Web ANC is limited by microphone placement, headphone leakage, device latency, and the lack of a true error microphone at the ear.
+                </p>
+                <ul class="text-[11px] text-amber-100/70 list-disc pl-4 space-y-1">
+                  <li>Best for steady low-frequency noise like HVAC, transit rumble, or crowd hum.</li>
+                  <li>Not fast enough to reliably cancel fireworks, gunshots, or other sharp transients.</li>
+                  <li>Use sealed wired headphones and keep output levels conservative.</li>
+                </ul>
+              </div>
+            </div>
+          </section>
+        </aside>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const WORKLET_CODE = `
+      class AdaptiveNoiseProcessor extends AudioWorkletProcessor {
+        static get parameterDescriptors() {
+          return [
+            { name: 'mu', defaultValue: 0.06, minValue: 0.001, maxValue: 0.25, automationRate: 'k-rate' },
+            { name: 'mix', defaultValue: 1, minValue: 0, maxValue: 1, automationRate: 'k-rate' },
+            { name: 'clip', defaultValue: 0.8, minValue: 0.05, maxValue: 1, automationRate: 'k-rate' },
+            { name: 'enabled', defaultValue: 1, minValue: 0, maxValue: 1, automationRate: 'k-rate' },
+            { name: 'freeze', defaultValue: 0, minValue: 0, maxValue: 1, automationRate: 'k-rate' }
+          ];
+        }
+
+        constructor() {
+          super();
+          this.filterLen = 96;
+          this.weights = new Float32Array(this.filterLen);
+          this.buffer = new Float32Array(this.filterLen);
+          this.writeIndex = 0;
+          this.eps = 1e-5;
+          this.leak = 0.00002;
+          this.telemetryCount = 0;
+
+          this.port.onmessage = (event) => {
+            if (event.data && event.data.type === 'reset') {
+              this.weights.fill(0);
+              this.buffer.fill(0);
+              this.writeIndex = 0;
+            }
+          };
+        }
+
+        process(inputs, outputs, parameters) {
+          const input = inputs[0];
+          const output = outputs[0];
+          if (!input || !input[0] || !output || !output[0]) return true;
+
+          const src = input[0];
+          const dst = output[0];
+          const muValues = parameters.mu;
+          const mixValues = parameters.mix;
+          const clipValues = parameters.clip;
+          const enabledValues = parameters.enabled;
+          const freezeValues = parameters.freeze;
+
+          for (let i = 0; i < src.length; i++) {
+            const enabled = enabledValues.length > 1 ? enabledValues[i] : enabledValues[0];
+            if (enabled < 0.5) {
+              dst[i] = 0;
+              continue;
+            }
+
+            const x = src[i];
+            this.buffer[this.writeIndex] = x;
+
+            let estimate = 0;
+            let power = this.eps;
+            let ptr = this.writeIndex;
+
+            for (let j = 0; j < this.filterLen; j++) {
+              const sample = this.buffer[ptr];
+              estimate += this.weights[j] * sample;
+              power += sample * sample;
+              ptr = ptr === 0 ? this.filterLen - 1 : ptr - 1;
+            }
+
+            const mix = mixValues.length > 1 ? mixValues[i] : mixValues[0];
+            const clip = clipValues.length > 1 ? clipValues[i] : clipValues[0];
+            let anti = -estimate * mix;
+            if (anti > clip) anti = clip;
+            if (anti < -clip) anti = -clip;
+            dst[i] = anti;
+
+            const freeze = freezeValues.length > 1 ? freezeValues[i] : freezeValues[0];
+            if (freeze < 0.5) {
+              const mu = muValues.length > 1 ? muValues[i] : muValues[0];
+              const error = x - estimate;
+              const step = mu / power;
+              ptr = this.writeIndex;
+              for (let j = 0; j < this.filterLen; j++) {
+                const sample = this.buffer[ptr];
+                this.weights[j] = (1 - this.leak) * this.weights[j] + step * error * sample;
+                ptr = ptr === 0 ? this.filterLen - 1 : ptr - 1;
+              }
+            }
+
+            this.writeIndex++;
+            if (this.writeIndex >= this.filterLen) this.writeIndex = 0;
+          }
+
+          this.telemetryCount++;
+          if (this.telemetryCount >= 32) {
+            this.telemetryCount = 0;
+            let norm = 0;
+            for (let i = 0; i < this.weights.length; i++) {
+              norm += Math.abs(this.weights[i]);
+            }
+            this.port.postMessage({ type: 'telemetry', weightNorm: norm.toFixed(3) });
+          }
+
+          return true;
+        }
+      }
+      registerProcessor('adaptive-noise-processor', AdaptiveNoiseProcessor);
+    `;
+
+    const PRESETS = {
+      'Manual': { filter: 'lowpass', cutoff: 500, q: 0.7, strength: 9, delay: 0, learning: 0.06, clip: 0.8, mode: 'phase', hint: 'Tune manually for your environment.' },
+      'Crowd Rumble': { filter: 'lowpass', cutoff: 450, q: 0.8, strength: 10, delay: 2, learning: 0.06, clip: 0.8, mode: 'adaptive', hint: 'Targets broad low crowd energy and concert rumble.' },
+      'Bass / Sub': { filter: 'lowpass', cutoff: 180, q: 1.0, strength: 12, delay: 3, learning: 0.05, clip: 0.72, mode: 'adaptive', hint: 'Designed for deep bass and sub-heavy steady noise.' },
+      'Air Conditioner': { filter: 'notch', cutoff: 120, q: 9.0, strength: 6, delay: 1.2, learning: 0.04, clip: 0.75, mode: 'phase', hint: 'Narrow notch around common HVAC hum ranges.' },
+      'Vocal / Speech': { filter: 'bandpass', cutoff: 1200, q: 1.4, strength: 6, delay: 0.5, learning: 0.03, clip: 0.85, mode: 'phase', hint: 'Experimental mid-band targeting for voices and chatter.' },
+      'Hiss / Room': { filter: 'highpass', cutoff: 2200, q: 0.7, strength: 5, delay: 0.2, learning: 0.02, clip: 0.9, mode: 'phase', hint: 'Focuses on high-frequency room hiss.' }
+    };
+
+    let audioCtx = null;
+    let stream = null;
+    let micSource = null;
+    let analyser = null;
+    let filterNode = null;
+    let phaseInverter = null;
+    let workletNode = null;
+    let outputGain = null;
+    let delayNode = null;
+    let compressor = null;
+    let masterGain = null;
+    let isRunning = false;
+    let workletSupported = false;
+    let workletLoaded = false;
+    let currentMode = 'phase';
+    let currentFilter = 'lowpass';
+    let currentProfile = 'Manual';
+    let limiterEnabled = true;
+    let learningFrozen = false;
+    let pendingCalibration = false;
+    let isCalibrating = false;
+    let calibrationTimer = null;
+    let calibrationInterval = null;
+    let calibrationStartedAt = 0;
+    let animationId = null;
+    let lastTelemetryNorm = '--';
+
+    const startBtn = document.getElementById('startBtn');
+    const startBtnText = document.getElementById('startBtnText');
+    const startPulse = document.getElementById('startPulse');
+    const calibrateBtn = document.getElementById('calibrateBtn');
+    const statusDot = document.getElementById('statusDot');
+    const statusText = document.getElementById('statusText');
+    const statusSubtext = document.getElementById('statusSubtext');
+    const canvasOverlay = document.getElementById('canvasOverlay');
+    const calibrationOverlay = document.getElementById('calibrationOverlay');
+    const calibrationBar = document.getElementById('calibrationBar');
+    const calibrationPercent = document.getElementById('calibrationPercent');
+    const mainCard = document.getElementById('mainCard');
+    const audioWorkletBadge = document.getElementById('audioWorkletBadge');
+    const pipelineFilter = document.getElementById('pipelineFilter');
+    const pipelineMode = document.getElementById('pipelineMode');
+
+    const modePhase = document.getElementById('modePhase');
+    const modeAdaptive = document.getElementById('modeAdaptive');
+    const presetSelect = document.getElementById('presetSelect');
+    const applyPresetBtn = document.getElementById('applyPresetBtn');
+    const filterButtons = Array.from(document.querySelectorAll('.filter-btn'));
+
+    const cutoffSlider = document.getElementById('cutoffSlider');
+    const qSlider = document.getElementById('qSlider');
+    const strengthSlider = document.getElementById('strengthSlider');
+    const delaySlider = document.getElementById('delaySlider');
+    const learningSlider = document.getElementById('learningSlider');
+    const clipSlider = document.getElementById('clipSlider');
+
+    const cutoffLabel = document.getElementById('cutoffLabel');
+    const qLabel = document.getElementById('qLabel');
+    const strengthLabel = document.getElementById('strengthLabel');
+    const delayLabel = document.getElementById('delayLabel');
+    const learningLabel = document.getElementById('learningLabel');
+    const clipLabel = document.getElementById('clipLabel');
+
+    const freezeBtn = document.getElementById('freezeBtn');
+    const limiterBtn = document.getElementById('limiterBtn');
+    const resetAdaptiveBtn = document.getElementById('resetAdaptiveBtn');
+
+    const latencyValue = document.getElementById('latencyValue');
+    const peakValue = document.getElementById('peakValue');
+    const levelValue = document.getElementById('levelValue');
+    const limiterValue = document.getElementById('limiterValue');
+
+    const profileName = document.getElementById('profileName');
+    const profileHint = document.getElementById('profileHint');
+
+    const diagMode = document.getElementById('diagMode');
+    const diagFilter = document.getElementById('diagFilter');
+    const diagCutoff = document.getElementById('diagCutoff');
+    const diagDelay = document.getElementById('diagDelay');
+    const diagLearning = document.getElementById('diagLearning');
+    const diagStrength = document.getElementById('diagStrength');
+
+    const logPanel = document.getElementById('logPanel');
+    const clearLogBtn = document.getElementById('clearLogBtn');
+
+    const canvas = document.getElementById('visualizer');
+    const ctx = canvas.getContext('2d');
+
+    function logEvent(message, tone) {
+      const item = document.createElement('div');
+      const colors = {
+        info: 'border-slate-800 text-slate-300',
+        success: 'border-emerald-500/20 text-emerald-200',
+        warn: 'border-amber-500/20 text-amber-200',
+        error: 'border-rose-500/20 text-rose-200'
+      };
+      item.className = 'rounded-xl border bg-slate-900/45 px-3 py-2 ' + (colors[tone || 'info'] || colors.info);
+      const now = new Date();
+      const ts = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      item.innerHTML = '<div class="text-[10px] text-slate-500 mb-1">' + ts + '</div><div>' + escapeHtml(message) + '</div>';
+      logPanel.prepend(item);
+      while (logPanel.children.length > 12) {
+        logPanel.removeChild(logPanel.lastChild);
+      }
+    }
+
+    function escapeHtml(str) {
+      return String(str).replace(/[&<>"']/g, function (match) {
+        return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[match];
+      });
+    }
+
+    function setStatus(text, tone, subtext) {
+      statusText.textContent = text;
+      statusSubtext.textContent = subtext || '';
+      statusText.className = 'font-medium ' + ({
+        neutral: 'text-slate-300',
+        live: 'text-emerald-300',
+        info: 'text-cyan-300',
+        warn: 'text-amber-300',
+        error: 'text-rose-300'
+      }[tone || 'neutral']);
+      statusDot.className = 'status-dot ' + ({
+        neutral: 'bg-slate-500',
+        live: 'bg-emerald-400 live',
+        info: 'bg-cyan-400 live',
+        warn: 'bg-amber-400 live',
+        error: 'bg-rose-400 live'
+      }[tone || 'neutral']);
+    }
+
+    function safeDisconnect(node) {
+      if (!node) return;
+      try { node.disconnect(); } catch (e) {}
+    }
+
+    function dbToGain(db) {
+      return Math.pow(10, db / 20);
+    }
+
+    function gainToDb(gain) {
+      return 20 * Math.log10(Math.max(gain, 1e-6));
+    }
+
+    function mapLearningSlider(value) {
+      return (0.001 + (Number(value) / 100) * 0.199).toFixed(3);
+    }
+
+    function formatFreq(hz) {
+      hz = Number(hz) || 0;
+      if (hz >= 1000) return (hz / 1000).toFixed(hz >= 10000 ? 0 : 1) + ' kHz';
+      return Math.round(hz) + ' Hz';
+    }
+
+    function updateStaticLabels() {
+      cutoffLabel.textContent = formatFreq(cutoffSlider.value);
+      qLabel.textContent = Number(qSlider.value).toFixed(1);
+      strengthLabel.textContent = '-' + Number(strengthSlider.value).toFixed(1) + ' dB';
+      delayLabel.textContent = Number(delaySlider.value).toFixed(1) + ' ms';
+      learningLabel.textContent = mapLearningSlider(learningSlider.value);
+      clipLabel.textContent = Number(clipSlider.value).toFixed(2);
+      diagCutoff.textContent = formatFreq(cutoffSlider.value);
+      diagDelay.textContent = Number(delaySlider.value).toFixed(1) + ' ms';
+      diagLearning.textContent = mapLearningSlider(learningSlider.value);
+      diagStrength.textContent = '-' + Number(strengthSlider.value).toFixed(1) + ' dB';
+      pipelineFilter.textContent = '🔽 ' + capitalize(currentFilter);
+      diagFilter.textContent = capitalize(currentFilter);
+      diagMode.textContent = currentMode === 'adaptive' ? 'Adaptive NLMS' : 'Phase Invert';
+      pipelineMode.textContent = currentMode === 'adaptive' ? '⚙️ Adaptive NLMS' : '🔊 Phase invert';
+    }
+
+    function capitalize(str) {
+      return str.charAt(0).toUpperCase() + str.slice(1);
+    }
+
+    function updateProfile(name, hint) {
+      currentProfile = name;
+      profileName.textContent = name;
+      profileHint.textContent = hint || '';
+    }
+
+    function updateModeUI() {
+      modePhase.classList.toggle('active', currentMode === 'phase');
+      modeAdaptive.classList.toggle('active', currentMode === 'adaptive');
+      if (currentMode === 'adaptive') {
+        modePhase.classList.remove('active');
+        modeAdaptive.classList.add('active');
+      } else {
+        modeAdaptive.classList.remove('active');
+        modePhase.classList.add('active');
+      }
+      updateStaticLabels();
+    }
+
+    function setFilterUI(type) {
+      currentFilter = type;
+      filterButtons.forEach(function (btn) {
+        const active = btn.dataset.filter === type;
+        btn.classList.toggle('active', active);
+        btn.classList.toggle('border-cyan-500/40', active);
+        btn.classList.toggle('border-slate-700', !active);
+      });
+      updateStaticLabels();
+    }
+
+    function setLimiterUI(enabled) {
+      limiterEnabled = enabled;
+      limiterBtn.classList.toggle('active', enabled);
+      limiterBtn.classList.toggle('border-cyan-500/40', enabled);
+      limiterBtn.classList.toggle('border-slate-700', !enabled);
+    }
+
+    function setFreezeUI(enabled) {
+      learningFrozen = enabled;
+      freezeBtn.classList.toggle('active', enabled);
+      freezeBtn.classList.toggle('border-cyan-500/40', enabled);
+      freezeBtn.classList.toggle('border-slate-700', !enabled);
+    }
+
+    function syncFilterParams() {
+      if (!filterNode || !audioCtx) return;
+      filterNode.type = currentFilter;
+      filterNode.frequency.setTargetAtTime(Number(cutoffSlider.value), audioCtx.currentTime, 0.03);
+      filterNode.Q.setTargetAtTime(Number(qSlider.value), audioCtx.currentTime, 0.04);
+      updateStaticLabels();
+    }
+
+    function syncOutputParams() {
+      if (!audioCtx) return;
+      if (outputGain) {
+        const gain = dbToGain(-Number(strengthSlider.value));
+        outputGain.gain.setTargetAtTime(gain, audioCtx.currentTime, 0.04);
+      }
+      if (delayNode) {
+        delayNode.delayTime.setTargetAtTime(Number(delaySlider.value) / 1000, audioCtx.currentTime, 0.02);
+      }
+      if (workletNode) {
+        const mu = Number(mapLearningSlider(learningSlider.value));
+        const clip = Number(clipSlider.value);
+        workletNode.parameters.get('mu').setValueAtTime(mu, audioCtx.currentTime);
+        workletNode.parameters.get('clip').setValueAtTime(clip, audioCtx.currentTime);
+        workletNode.parameters.get('freeze').setValueAtTime(learningFrozen ? 1 : 0, audioCtx.currentTime);
+        workletNode.parameters.get('enabled').setValueAtTime(1, audioCtx.currentTime);
+        workletNode.parameters.get('mix').setValueAtTime(1, audioCtx.currentTime);
+      }
+      if (phaseInverter) {
+        phaseInverter.gain.value = -1;
+      }
+      updateLimiterSettings();
+      updateStaticLabels();
+    }
+
+    function updateLimiterSettings() {
+      if (!compressor) return;
+      if (limiterEnabled) {
+        compressor.threshold.value = -16;
+        compressor.knee.value = 10;
+        compressor.ratio.value = 12;
+        compressor.attack.value = 0.003;
+        compressor.release.value = 0.18;
+      } else {
+        compressor.threshold.value = 0;
+        compressor.knee.value = 0;
+        compressor.ratio.value = 1;
+        compressor.attack.value = 0;
+        compressor.release.value = 0.05;
+      }
+    }
+
+    async function loadWorklet() {
+      if (!audioCtx || !audioCtx.audioWorklet) return false;
+      if (workletLoaded) return true;
+      try {
+        const blob = new Blob([WORKLET_CODE], { type: 'application/javascript' });
+        const url = URL.createObjectURL(blob);
+        await audioCtx.audioWorklet.addModule(url);
+        URL.revokeObjectURL(url);
+        workletLoaded = true;
+        workletSupported = true;
+        audioWorkletBadge.textContent = 'AudioWorklet ready';
+        audioWorkletBadge.className = 'badge-soft rounded-full px-3 py-1 text-emerald-300';
+        logEvent('AudioWorklet module loaded successfully.', 'success');
+        return true;
+      } catch (error) {
+        workletLoaded = false;
+        workletSupported = false;
+        audioWorkletBadge.textContent = 'AudioWorklet unavailable';
+        audioWorkletBadge.className = 'badge-soft rounded-full px-3 py-1 text-amber-300';
+        logEvent('AudioWorklet unavailable. Adaptive mode will fall back to phase inversion.', 'warn');
+        return false;
+      }
+    }
+
+    function createNodes() {
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 2048;
+      analyser.smoothingTimeConstant = 0.84;
+
+      filterNode = audioCtx.createBiquadFilter();
+      filterNode.type = currentFilter;
+      filterNode.frequency.value = Number(cutoffSlider.value);
+      filterNode.Q.value = Number(qSlider.value);
+
+      phaseInverter = audioCtx.createGain();
+      phaseInverter.gain.value = -1;
+
+      outputGain = audioCtx.createGain();
+      outputGain.gain.value = dbToGain(-Number(strengthSlider.value));
+
+      delayNode = audioCtx.createDelay(0.05);
+      delayNode.delayTime.value = Number(delaySlider.value) / 1000;
+
+      compressor = audioCtx.createDynamicsCompressor();
+      updateLimiterSettings();
+
+      masterGain = audioCtx.createGain();
+      masterGain.gain.value = 0.9;
+
+      if (workletLoaded) {
+        workletNode = new AudioWorkletNode(audioCtx, 'adaptive-noise-processor', {
+          numberOfInputs: 1,
+          numberOfOutputs: 1,
+          outputChannelCount: [1]
+        });
+        workletNode.parameters.get('mu').value = Number(mapLearningSlider(learningSlider.value));
+        workletNode.parameters.get('clip').value = Number(clipSlider.value);
+        workletNode.parameters.get('enabled').value = 1;
+        workletNode.parameters.get('freeze').value = learningFrozen ? 1 : 0;
+        workletNode.parameters.get('mix').value = 1;
+        workletNode.port.onmessage = function (event) {
+          if (event.data && event.data.type === 'telemetry') {
+            lastTelemetryNorm = event.data.weightNorm;
+          }
+        };
+      }
+    }
+
+    function connectGraph() {
+      safeDisconnect(micSource);
+      safeDisconnect(filterNode);
+      safeDisconnect(phaseInverter);
+      safeDisconnect(workletNode);
+      safeDisconnect(outputGain);
+      safeDisconnect(delayNode);
+      safeDisconnect(compressor);
+      safeDisconnect(masterGain);
+
+      micSource.connect(analyser);
+      micSource.connect(filterNode);
+
+      if (currentMode === 'adaptive' && workletNode) {
+        filterNode.connect(workletNode);
+        workletNode.connect(outputGain);
+      } else {
+        filterNode.connect(phaseInverter);
+        phaseInverter.connect(outputGain);
+      }
+
+      outputGain.connect(delayNode);
+      delayNode.connect(compressor);
+      compressor.connect(masterGain);
+      masterGain.connect(audioCtx.destination);
+
+      syncFilterParams();
+      syncOutputParams();
+    }
+
+    async function startEngine() {
+      if (isRunning) return;
+      try {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          throw new Error('getUserMedia is not supported in this browser.');
+        }
+
+        setStatus('Initializing audio engine…', 'info', 'Creating AudioContext, checking worklet support, and requesting microphone access.');
+        const AudioContextRef = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioContextRef({ latencyHint: 'interactive' });
+
+        if (audioCtx.state === 'suspended') {
+          await audioCtx.resume();
+        }
+
+        workletSupported = !!audioCtx.audioWorklet;
+        audioWorkletBadge.textContent = workletSupported ? 'AudioWorklet available' : 'AudioWorklet unavailable';
+        audioWorkletBadge.className = 'badge-soft rounded-full px-3 py-1 ' + (workletSupported ? 'text-cyan-300' : 'text-amber-300');
+
+        await loadWorklet();
+
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: false,
+            noiseSuppression: false,
+            autoGainControl: false,
+            latency: 0,
+            channelCount: 1
+          }
+        });
+
+        micSource = audioCtx.createMediaStreamSource(stream);
+        createNodes();
+
+        if (currentMode === 'adaptive' && !workletNode) {
+          currentMode = 'phase';
+          updateModeUI();
+          logEvent('Adaptive mode not supported here. Automatically switched to Phase Invert.', 'warn');
+        }
+
+        connectGraph();
+        isRunning = true;
+        canvasOverlay.style.display = 'none';
+        startBtnText.textContent = 'Stop Noise Cancelation';
+        startBtn.classList.remove('from-cyan-600', 'to-blue-500', 'shadow-cyan-600/20');
+        startBtn.classList.add('from-rose-600', 'to-rose-500', 'shadow-rose-600/20');
+        startPulse.classList.add('pulse-ring');
+        startPulse.style.opacity = '1';
+        setStatus('Engine live', 'live', currentMode === 'adaptive' ? 'Adaptive NLMS processor is running on the audio thread.' : 'Phase inversion path is active.');
+        mainCard.classList.add('glow-live');
+        updateStaticLabels();
+        updateLatencyDisplay();
+        logEvent('Microphone stream opened and audio graph connected.', 'success');
+        visualize();
+
+        if (pendingCalibration) {
+          pendingCalibration = false;
+          runCalibration();
+        }
+      } catch (error) {
+        logEvent('Startup failed: ' + (error.message || error.name || 'Unknown error'), 'error');
+        setStatus('Startup error', 'error', error.name === 'NotAllowedError' ? 'Microphone permission was denied.' : (error.message || 'Unable to initialize the audio engine.'));
+        cleanupAudio();
+      }
+    }
+
+    function stopEngine() {
+      if (!isRunning && !audioCtx) return;
+      cancelCalibration();
+      if (animationId) cancelAnimationFrame(animationId);
+      animationId = null;
+      cleanupAudio();
+      isRunning = false;
+      startBtnText.textContent = 'Start Noise Cancelation';
+      startBtn.classList.remove('from-rose-600', 'to-rose-500', 'shadow-rose-600/20');
+      startBtn.classList.add('from-cyan-600', 'to-blue-500', 'shadow-cyan-600/20');
+      startPulse.classList.remove('pulse-ring');
+      startPulse.style.opacity = '0';
+      canvasOverlay.style.display = 'flex';
+      setStatus('System ready', 'neutral', 'Press Start to request microphone access and initialize the audio graph.');
+      latencyValue.textContent = '--';
+      peakValue.textContent = '--';
+      levelValue.textContent = '--';
+      limiterValue.textContent = '--';
+      lastTelemetryNorm = '--';
+      const rect = canvas.getBoundingClientRect();
+      ctx.clearRect(0, 0, rect.width, rect.height);
+      logEvent('Audio engine stopped and resources released.', 'info');
+    }
+
+    function cleanupAudio() {
+      if (stream) {
+        stream.getTracks().forEach(function (track) { track.stop(); });
+      }
+      stream = null;
+      safeDisconnect(micSource);
+      safeDisconnect(filterNode);
+      safeDisconnect(phaseInverter);
+      safeDisconnect(workletNode);
+      safeDisconnect(outputGain);
+      safeDisconnect(delayNode);
+      safeDisconnect(compressor);
+      safeDisconnect(masterGain);
+      micSource = null;
+      analyser = null;
+      filterNode = null;
+      phaseInverter = null;
+      workletNode = null;
+      outputGain = null;
+      delayNode = null;
+      compressor = null;
+      masterGain = null;
+      if (audioCtx) {
+        audioCtx.close().catch(function () {});
+      }
+      audioCtx = null;
+      workletLoaded = false;
+    }
+
+    async function switchMode(mode) {
+      if (mode === currentMode) return;
+      currentMode = mode;
+      updateModeUI();
+
+      if (isRunning) {
+        if (mode === 'adaptive' && !workletLoaded) {
+          const ok = await loadWorklet();
+          if (ok && !workletNode) {
+            workletNode = new AudioWorkletNode(audioCtx, 'adaptive-noise-processor', {
+              numberOfInputs: 1,
+              numberOfOutputs: 1,
+              outputChannelCount: [1]
+            });
+            workletNode.parameters.get('mu').value = Number(mapLearningSlider(learningSlider.value));
+            workletNode.parameters.get('clip').value = Number(clipSlider.value);
+            workletNode.parameters.get('enabled').value = 1;
+            workletNode.parameters.get('freeze').value = learningFrozen ? 1 : 0;
+            workletNode.parameters.get('mix').value = 1;
+            workletNode.port.onmessage = function (event) {
+              if (event.data && event.data.type === 'telemetry') lastTelemetryNorm = event.data.weightNorm;
+            };
+          }
+        }
+
+        if (mode === 'adaptive' && !workletNode) {
+          currentMode = 'phase';
+          updateModeUI();
+          setStatus('Adaptive mode unavailable', 'warn', 'This browser/device could not initialize AudioWorklet.');
+          logEvent('Adaptive mode request failed; remaining in Phase Invert.', 'warn');
+          return;
+        }
+
+        connectGraph();
+        setStatus('Mode switched', 'live', currentMode === 'adaptive' ? 'Adaptive NLMS processor engaged.' : 'Phase inversion path engaged.');
+        logEvent('Mode changed to ' + (currentMode === 'adaptive' ? 'Adaptive NLMS' : 'Phase Invert') + '.', 'success');
+      } else {
+        logEvent('Mode set to ' + (currentMode === 'adaptive' ? 'Adaptive NLMS' : 'Phase Invert') + '.', 'info');
+      }
+    }
+
+    function applyPreset(name) {
+      const preset = PRESETS[name];
+      if (!preset) return;
+      setFilterUI(preset.filter);
+      cutoffSlider.value = preset.cutoff;
+      qSlider.value = preset.q;
+      strengthSlider.value = preset.strength;
+      delaySlider.value = preset.delay;
+      clipSlider.value = preset.clip;
+      learningSlider.value = Math.max(1, Math.min(100, Math.round(((preset.learning - 0.001) / 0.199) * 100)));
+      updateProfile(name, preset.hint);
+      updateStaticLabels();
+      syncFilterParams();
+      syncOutputParams();
+      if (preset.mode && preset.mode !== currentMode) {
+        switchMode(preset.mode);
+      }
+      logEvent('Preset applied: ' + name + '.', 'success');
+    }
+
+    function updateLatencyDisplay() {
+      if (!audioCtx) return;
+      const base = audioCtx.baseLatency || 0;
+      const out = audioCtx.outputLatency || 0;
+      const total = (base + out) * 1000;
+      latencyValue.textContent = total > 0 ? total.toFixed(1) + 'ms' : (base * 1000).toFixed(1) + 'ms';
+    }
+
+    function fitCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    function visualize() {
+      if (!analyser || !audioCtx) return;
+      fitCanvas();
+      const freqData = new Uint8Array(analyser.frequencyBinCount);
+      const timeData = new Uint8Array(analyser.fftSize);
+
+      function draw() {
+        if (!isRunning || !analyser) return;
+        animationId = requestAnimationFrame(draw);
+        const rect = canvas.getBoundingClientRect();
+        const width = rect.width;
+        const height = rect.height;
+
+        analyser.getByteFrequencyData(freqData);
+        analyser.getByteTimeDomainData(timeData);
+
+        ctx.fillStyle = 'rgba(2, 8, 23, 0.70)';
+        ctx.fillRect(0, 0, width, height);
+
+        const grad = ctx.createLinearGradient(0, 0, 0, height);
+        grad.addColorStop(0, 'rgba(34, 211, 238, 0.85)');
+        grad.addColorStop(1, 'rgba(59, 130, 246, 0.08)');
+
+        const bars = 64;
+        const barWidth = width / bars;
+        const stride = Math.max(1, Math.floor(freqData.length / bars));
+        for (let i = 0; i < bars; i++) {
+          let sum = 0;
+          for (let j = 0; j < stride; j++) sum += freqData[i * stride + j] || 0;
+          const magnitude = (sum / stride) / 255;
+          const barHeight = magnitude * height * 0.72;
+          const x = i * barWidth;
+          ctx.fillStyle = grad;
+          ctx.fillRect(x + 1, height - barHeight, barWidth - 2, barHeight);
+        }
+
+        ctx.strokeStyle = 'rgba(191, 219, 254, 0.95)';
+        ctx.lineWidth = 1.9;
+        ctx.beginPath();
+        const sliceWidth = width / timeData.length;
+        let x = 0;
+        for (let i = 0; i < timeData.length; i++) {
+          const v = timeData[i] / 128;
+          const y = (v * height) / 2;
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+          x += sliceWidth;
+        }
+        ctx.stroke();
+
+        const nyquist = audioCtx.sampleRate / 2;
+        const markerX = Math.min(width, Math.max(0, (Number(cutoffSlider.value) / nyquist) * width));
+        ctx.strokeStyle = currentFilter === 'notch' ? 'rgba(251, 191, 36, 0.9)' : 'rgba(34, 197, 94, 0.9)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(markerX, 0);
+        ctx.lineTo(markerX, height);
+        ctx.stroke();
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.88)';
+        ctx.fillRect(Math.max(6, markerX - 46), 8, 92, 22);
+        ctx.fillStyle = '#cbd5e1';
+        ctx.font = '11px Inter';
+        ctx.textAlign = 'center';
+        ctx.fillText(formatFreq(cutoffSlider.value), Math.max(52, Math.min(width - 52, markerX)), 23);
+
+        updateMetrics(freqData, timeData);
+      }
+
+      draw();
+    }
+
+    function updateMetrics(freqData, timeData) {
+      if (!audioCtx) return;
+      let maxIndex = 0;
+      let maxValue = 0;
+      for (let i = 0; i < freqData.length / 2; i++) {
+        if (freqData[i] > maxValue) {
+          maxValue = freqData[i];
+          maxIndex = i;
+        }
+      }
+      const nyquist = audioCtx.sampleRate / 2;
+      const peak = (maxIndex / freqData.length) * nyquist;
+      peakValue.textContent = peak > 1 ? Math.round(peak) + 'Hz' : '--';
+
+      let sum = 0;
+      for (let i = 0; i < timeData.length; i++) {
+        const v = (timeData[i] - 128) / 128;
+        sum += v * v;
+      }
+      const rms = Math.sqrt(sum / timeData.length);
+      const db = gainToDb(rms);
+      levelValue.textContent = db > -90 ? db.toFixed(0) + 'dB' : '-∞';
+
+      if (compressor && limiterEnabled) {
+        limiterValue.textContent = Math.abs(compressor.reduction || 0).toFixed(1) + 'dB';
+      } else {
+        limiterValue.textContent = '0.0dB';
+      }
+
+      updateLatencyDisplay();
+      statusSubtext.textContent = currentMode === 'adaptive'
+        ? 'Adaptive weight activity: ' + lastTelemetryNorm + ' • delay ' + Number(delaySlider.value).toFixed(1) + ' ms'
+        : 'Phase inversion active • delay ' + Number(delaySlider.value).toFixed(1) + ' ms';
+    }
+
+    async function runCalibration() {
+      if (isCalibrating) return;
+      if (!isRunning) {
+        pendingCalibration = true;
+        logEvent('Calibration requested. Starting engine first…', 'info');
+        await startEngine();
+        return;
+      }
+
+      isCalibrating = true;
+      calibrationOverlay.classList.remove('hidden');
+      calibrationBar.style.width = '0%';
+      calibrationPercent.textContent = '0%';
+      calibrationStartedAt = performance.now();
+      setStatus('Calibrating', 'info', 'Sampling the ambient spectrum for 2 seconds to suggest a profile.');
+      logEvent('Smart calibration started.', 'info');
+
+      const spectrum = new Uint8Array(analyser.frequencyBinCount);
+      const accum = new Float32Array(analyser.frequencyBinCount);
+      let frames = 0;
+
+      calibrationInterval = setInterval(function () {
+        if (!analyser) return;
+        analyser.getByteFrequencyData(spectrum);
+        for (let i = 0; i < accum.length; i++) accum[i] += spectrum[i];
+        frames++;
+        const progress = Math.min(1, (performance.now() - calibrationStartedAt) / 2000);
+        calibrationBar.style.width = (progress * 100).toFixed(0) + '%';
+        calibrationPercent.textContent = Math.round(progress * 100) + '%';
+      }, 50);
+
+      calibrationTimer = setTimeout(function () {
+        clearInterval(calibrationInterval);
+        calibrationInterval = null;
+        const averaged = new Float32Array(accum.length);
+        for (let i = 0; i < accum.length; i++) averaged[i] = frames ? accum[i] / frames : 0;
+        const decision = choosePresetFromSpectrum(averaged);
+        applyPreset(decision.name);
+        presetSelect.value = decision.name;
+        updateProfile(decision.name, decision.reason);
+        calibrationOverlay.classList.add('hidden');
+        calibrationBar.style.width = '0%';
+        calibrationPercent.textContent = '0%';
+        isCalibrating = false;
+        if (workletNode) workletNode.port.postMessage({ type: 'reset' });
+        setStatus('Calibration complete', 'live', decision.reason);
+        logEvent('Calibration chose profile: ' + decision.name + '.', 'success');
+      }, 2000);
+    }
+
+    function cancelCalibration() {
+      if (calibrationTimer) clearTimeout(calibrationTimer);
+      if (calibrationInterval) clearInterval(calibrationInterval);
+      calibrationTimer = null;
+      calibrationInterval = null;
+      isCalibrating = false;
+      calibrationOverlay.classList.add('hidden');
+      calibrationBar.style.width = '0%';
+      calibrationPercent.textContent = '0%';
+    }
+
+    function choosePresetFromSpectrum(avg) {
+      if (!audioCtx) return { name: 'Crowd Rumble', reason: PRESETS['Crowd Rumble'].hint };
+      const nyquist = audioCtx.sampleRate / 2;
+      let maxIndex = 0;
+      let maxValue = 0;
+      let low = 0, lowMid = 0, mid = 0, high = 0;
+      for (let i = 0; i < avg.length / 2; i++) {
+        const freq = (i / avg.length) * nyquist;
+        const value = avg[i];
+        if (value > maxValue) {
+          maxValue = value;
+          maxIndex = i;
+        }
+        if (freq < 250) low += value;
+        else if (freq < 800) lowMid += value;
+        else if (freq < 2500) mid += value;
+        else high += value;
+      }
+      const peakHz = (maxIndex / avg.length) * nyquist;
+      if (peakHz >= 90 && peakHz <= 140 && low > (lowMid * 0.8) && maxValue > 40) {
+        return { name: 'Air Conditioner', reason: 'Detected a narrow low-frequency hum near ' + Math.round(peakHz) + ' Hz.' };
+      }
+      if (peakHz < 220 && low > lowMid * 1.2) {
+        return { name: 'Bass / Sub', reason: 'Detected dominant deep bass energy below ~220 Hz.' };
+      }
+      if (peakHz < 700 && (low + lowMid) > (mid + high)) {
+        return { name: 'Crowd Rumble', reason: 'Detected broad low-frequency crowd or venue rumble.' };
+      }
+      if (high > (low + lowMid + mid) * 0.34 && peakHz > 1800) {
+        return { name: 'Hiss / Room', reason: 'Detected elevated high-frequency room hiss.' };
+      }
+      return { name: 'Vocal / Speech', reason: 'Detected stronger mid-band energy consistent with voices or chatter.' };
+    }
+
+    startBtn.addEventListener('click', function () {
+      if (!isRunning) startEngine();
+      else stopEngine();
+    });
+
+    calibrateBtn.addEventListener('click', function () {
+      runCalibration();
+    });
+
+    modePhase.addEventListener('click', function () { switchMode('phase'); });
+    modeAdaptive.addEventListener('click', function () { switchMode('adaptive'); });
+
+    applyPresetBtn.addEventListener('click', function () {
+      applyPreset(presetSelect.value);
+    });
+
+    presetSelect.addEventListener('change', function () {
+      updateProfile(presetSelect.value, PRESETS[presetSelect.value] ? PRESETS[presetSelect.value].hint : '');
+    });
+
+    filterButtons.forEach(function (button) {
+      button.addEventListener('click', function () {
+        setFilterUI(button.dataset.filter);
+        syncFilterParams();
+        logEvent('Filter type set to ' + capitalize(button.dataset.filter) + '.', 'info');
+      });
+    });
+
+    cutoffSlider.addEventListener('input', function () { updateStaticLabels(); syncFilterParams(); });
+    qSlider.addEventListener('input', function () { updateStaticLabels(); syncFilterParams(); });
+    strengthSlider.addEventListener('input', function () { updateStaticLabels(); syncOutputParams(); });
+    delaySlider.addEventListener('input', function () { updateStaticLabels(); syncOutputParams(); });
+    learningSlider.addEventListener('input', function () { updateStaticLabels(); syncOutputParams(); });
+    clipSlider.addEventListener('input', function () { updateStaticLabels(); syncOutputParams(); });
+
+    freezeBtn.addEventListener('click', function () {
+      setFreezeUI(!learningFrozen);
+      syncOutputParams();
+      logEvent(learningFrozen ? 'Adaptive learning frozen.' : 'Adaptive learning resumed.', 'info');
+    });
+
+    limiterBtn.addEventListener('click', function () {
+      setLimiterUI(!limiterEnabled);
+      updateLimiterSettings();
+      logEvent(limiterEnabled ? 'Safety limiter enabled.' : 'Safety limiter disabled.', limiterEnabled ? 'success' : 'warn');
+    });
+
+    resetAdaptiveBtn.addEventListener('click', function () {
+      if (workletNode) {
+        workletNode.port.postMessage({ type: 'reset' });
+        logEvent('Adaptive processor state reset.', 'success');
+      } else {
+        logEvent('Adaptive processor is not active in the current graph.', 'warn');
+      }
+    });
+
+    clearLogBtn.addEventListener('click', function () {
+      logPanel.innerHTML = '';
+    });
+
+    window.addEventListener('resize', function () {
+      if (isRunning) fitCanvas();
+    });
+
+    document.addEventListener('visibilitychange', function () {
+      if (audioCtx && document.visibilityState === 'visible' && audioCtx.state === 'suspended') {
+        audioCtx.resume().catch(function () {});
+      }
+    });
+
+    if (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+      document.getElementById('httpsBadge').textContent = 'Secure context ready';
+      document.getElementById('httpsBadge').className = 'badge-soft rounded-full px-3 py-1 text-emerald-300';
+    } else {
+      document.getElementById('httpsBadge').textContent = 'Use HTTPS or localhost';
+      document.getElementById('httpsBadge').className = 'badge-soft rounded-full px-3 py-1 text-amber-300';
+    }
+
+    setFilterUI('lowpass');
+    setLimiterUI(true);
+    setFreezeUI(false);
+    updateProfile('Manual', PRESETS['Manual'].hint);
+    updateModeUI();
+    updateStaticLabels();
+    fitCanvas();
+    logEvent('ANC Studio Ultra loaded. Awaiting user gesture to initialize audio.', 'info');
+  </script>
+</body>
+</html>

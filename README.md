@@ -97,6 +97,49 @@ usePipeReceiver("inspector", (delivery) => setText(delivery.content));
 <PipeInButton accepts={["mnemonic", "text"]} onReceive={(content) => setText(content)} />
 ```
 
+## Recovered HTML5 apps (`/apps/`)
+
+`npm run dev` also serves the other apps recovered from `Html5-sync-incoming`,
+over the dev server's origin rather than `file://`:
+
+| URL | App |
+| --- | --- |
+| `/apps/` | Index, with a live secure-context / microphone check |
+| `/apps/anc-studio/` | ANC Studio Ultra — adaptive multi-band FxLMS over AudioWorklet |
+| `/apps/cyberchef/` | CyberChef Renovated Kitchen — 336 recipes, plus file input and save |
+
+### Why serving them matters
+
+`getUserMedia` is only available in a [secure context](https://developer.mozilla.org/docs/Web/Security/Secure_Contexts).
+A page opened from `file://` is not one, so the browser never offers the
+microphone prompt and ANC Studio can't start — nothing in the app is broken.
+Served from an `http://localhost` or `https://` origin the prompt appears.
+The same applies to the MonKey API: `file://` pages get a `null` origin, which
+CORS rejects.
+
+A small Vite middleware (`appsDirectoryIndex` in `vite.config.ts`) rewrites
+directory URLs under `/apps/` to their `index.html`, which the SPA fallback
+would otherwise swallow.
+
+### CyberChef: file input, byte-exact Base64, save
+
+The kitchen had no file input and no way to save output, and its `To Base64`
+operation was `b64FromBytes(utf8Encode(text))` — running bytes through UTF-8,
+which corrupts anything that isn't valid UTF-8. Added:
+
+- **📁 Load File** — reads raw bytes. The loaded file (not the textarea)
+  becomes the pipeline source, so binary is never re-encoded.
+- **File / Binary to Base64** — byte-exact, with optional line wrapping.
+  Also **Base64 to File / Binary** and **File / Binary to Data URI**.
+- **→ Base64** — one-click recipe: prompts for a file and encodes it.
+- **💾 Save Output** — downloads the result. Base64 output is decoded back to
+  real bytes, so *File → Base64 → Save* reproduces the original file.
+
+Binary travels the text pipeline as a Latin-1 string (one code unit per byte)
+via `binStrFromBytes` / `bytesFromBinStr`. Verified on a 4096-byte adversarial
+payload including NULs and `0xFF`: the output equals Node's
+`Buffer.toString("base64")` exactly, while the old UTF-8 path does not.
+
 ## Layout
 
 ```
