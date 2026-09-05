@@ -172,15 +172,43 @@ those assets are not bundled — but it is deterministic and reflects the roll.
 
 Keys are generated in the browser. Treat them as toys, not wallets.
 
+## Collapsible shell
+
+Everything collapses, and the collapse state persists.
+
+| Control | Desktop (>=1024px) | Narrow |
+| --- | --- | --- |
+| **☰ hamburger** | toggles the left nav between labels and an icon rail | opens the nav as an off-canvas overlay |
+| **📥 Pipe Inbox** | docks a 20rem panel beside the content | opens the inbox as an overlay |
+| **Section headers** | collapse individual panels inside each tool | same |
+
+`src/shell/AppShell.tsx` owns the layout; `src/shell/Collapsible.tsx` is the
+reusable section. Notes on the details that are easy to get wrong:
+
+- **Collapsed panels are hidden, not unmounted.** Unmounting would discard tool
+  state — a half-typed mnemonic, a page of mined MonKeys.
+- **Overlays are deliberately not persisted**, unlike the rail and dock. Restoring
+  a modal overlay on load would drop the user behind a backdrop. Escape and a
+  backdrop click both close them, and body scroll is locked while one is open.
+- **The icon rail keeps accessible names** via `title`, so collapsing to icons
+  does not strip the nav for screen readers. Toggles expose `aria-expanded` /
+  `aria-controls`, and the active tool is marked `aria-current="page"`.
+
+Covered by 13 tests in `src/shell/AppShell.test.tsx` across both breakpoints.
+
 ## Layout
 
 ```
 src/
+  shell/
+    AppShell.tsx           hamburger, collapsible nav rail, docked inbox
+    Collapsible.tsx        reusable collapsing section
+    hooks.ts               persisted state, media query, escape, scroll lock
   pipe/
     types.ts               content types, Pipe/Delivery/PipeDraft, MAX_PIPES
     PipeProvider.tsx       store, persistence, delivery queue, usePipeReceiver
     PipeButtons.tsx        PipeOutButton / PipeInButton
-    PipeInbox.tsx          floating inbox drawer
+    PipeInboxPanel.tsx     inbox contents for the shell sidebar
     PipeProvider.test.tsx  14 regression tests
   lib/
     monkey/                accessory catalog + offline deterministic generation

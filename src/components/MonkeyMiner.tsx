@@ -10,6 +10,7 @@ import {
 } from "../lib/monkey/accessories";
 import { accessoriesFor, monkeySvg } from "../lib/monkey/generate";
 import { PipeOutButton } from "../pipe/PipeButtons";
+import Collapsible from "../shell/Collapsible";
 
 const TOOL_ID = "monkey";
 const TOOL_NAME = "MonKey Miner";
@@ -197,11 +198,13 @@ export default function MonkeyMiner() {
         </div>
       </section>
 
-      <section className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
-            Target accessories ({targets.size})
-          </h3>
+      <Collapsible
+        storageKey="bhw.monkey.targets"
+        title={`Target accessories (${targets.size})`}
+        icon="🎯"
+        subtitle={mode === "any" ? "match any" : "match all"}
+      >
+        <div className="mb-3 flex flex-wrap items-center justify-end gap-2">
           <div className="flex items-center gap-2">
             <label className="flex items-center gap-1 text-[11px] text-zinc-400">
               <input
@@ -264,12 +267,13 @@ export default function MonkeyMiner() {
             </div>
           ))}
         </div>
-      </section>
+      </Collapsible>
 
-      <section>
-        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">
-          Found MonKeys ({found.length})
-        </h3>
+      <Collapsible
+        storageKey="bhw.monkey.found"
+        title={`Found MonKeys (${found.length})`}
+        icon="🐒"
+      >
         {found.length === 0 ? (
           <div className="rounded-xl border border-dashed border-zinc-800 p-10 text-center text-sm text-zinc-600">
             Nothing yet. Pick targets and start mining.
@@ -281,7 +285,7 @@ export default function MonkeyMiner() {
             ))}
           </div>
         )}
-      </section>
+      </Collapsible>
 
       {selected && <Detail m={selected} onClose={() => setSelected(null)} />}
 

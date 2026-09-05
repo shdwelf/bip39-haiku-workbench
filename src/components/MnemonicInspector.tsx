@@ -3,6 +3,7 @@ import { deriveAddresses, validateMnemonic, WORDLIST } from "../lib/wallet";
 import { countSyllables } from "../lib/syllables";
 import { PipeInButton, PipeOutButton } from "../pipe/PipeButtons";
 import { usePipeReceiver } from "../pipe/PipeProvider";
+import Collapsible from "../shell/Collapsible";
 
 const TOOL_ID = "inspector";
 const TOOL_NAME = "Mnemonic Inspector";
@@ -113,10 +114,7 @@ export default function MnemonicInspector() {
 
       {analysis && (
         <section className="grid gap-4 lg:grid-cols-2">
-          <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
-            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-zinc-400">
-              Validity
-            </h3>
+          <Collapsible storageKey="bhw.insp.validity" title="Validity" icon="✅">
             <dl className="space-y-2 text-sm">
               <Row label="Words" value={String(words.length)} />
               <Row label="Total syllables" value={String(analysis.total)} />
@@ -137,12 +135,9 @@ export default function MnemonicInspector() {
                 <span className="font-mono">{analysis.unknown.join(", ")}</span>
               </p>
             )}
-          </div>
+          </Collapsible>
 
-          <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
-            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-zinc-400">
-              Haiku shape
-            </h3>
+          <Collapsible storageKey="bhw.insp.haiku" title="Haiku shape" icon="🍃">
             <div className="space-y-1.5">
               {analysis.lines.map((line, i) => (
                 <div
@@ -177,13 +172,15 @@ export default function MnemonicInspector() {
                 />
               </div>
             )}
-          </div>
+          </Collapsible>
 
           {analysis.derived && (
-            <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 lg:col-span-2">
-              <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-zinc-400">
-                Derived (BIP-44 {analysis.derived.path})
-              </h3>
+            <Collapsible
+              className="lg:col-span-2"
+              storageKey="bhw.insp.derived"
+              title={`Derived (BIP-44 ${analysis.derived.path})`}
+              icon="🔑"
+            >
               <div className="space-y-2">
                 <Mono
                   label="BTC legacy"
@@ -208,7 +205,7 @@ export default function MnemonicInspector() {
                   }}
                 />
               </div>
-            </div>
+            </Collapsible>
           )}
         </section>
       )}

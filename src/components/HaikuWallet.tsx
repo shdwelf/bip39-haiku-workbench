@@ -13,6 +13,7 @@ import { drawEnso } from "../lib/enso";
 import { decodeEnsoId } from "../lib/enso";
 import { PipeInButton, PipeOutButton } from "../pipe/PipeButtons";
 import { usePipeReceiver } from "../pipe/PipeProvider";
+import Collapsible from "../shell/Collapsible";
 
 interface Props {
   ensoId: string;
@@ -123,8 +124,13 @@ export default function HaikuWallet({ ensoId }: Props) {
     <div className="space-y-6">
       <div className="grid gap-6 lg:grid-cols-[340px_1fr]">
         {/* Forge panel */}
-        <div className="space-y-4 rounded-xl border border-zinc-800 bg-zinc-900/40 p-5">
-          <h2 className="text-lg font-semibold">⚒ Forge Haiku Wallet</h2>
+        <Collapsible
+          storageKey="bhw.wallet.forge"
+          title="Forge Haiku Wallet"
+          icon="⚒"
+          className="h-fit"
+        >
+          <div className="space-y-4">
           <p className="text-xs text-zinc-500">
             Mnemonics are real BIP-39 (128-bit, valid checksum). We mine seeds whose
             words naturally read as a 5-7-5 haiku, derive a BIP-44 Bitcoin address
@@ -230,19 +236,23 @@ export default function HaikuWallet({ ensoId }: Props) {
             Vault is AES-256 encrypted with your Ensō ID and saved to an encrypted
             cookie + localStorage for offline persistence.
           </p>
-        </div>
+          </div>
+        </Collapsible>
 
         {/* Collection */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">
-              Collection <span className="text-zinc-500">({items.length})</span>
-            </h2>
+        <Collapsible
+          storageKey="bhw.wallet.collection"
+          title={`Collection (${items.length})`}
+          icon="📦"
+          className="h-fit"
+          right={
             <PipeInButton
               accepts={["mnemonic", "text"]}
               onReceive={(content) => addMnemonic(content)}
             />
-          </div>
+          }
+        >
+          <div className="space-y-3">
           {imported && (
             <p className="rounded border border-cyan-500/30 bg-cyan-500/10 px-2 py-1 text-[11px] text-cyan-300">
               {imported}
@@ -345,7 +355,8 @@ export default function HaikuWallet({ ensoId }: Props) {
               );
             })}
           </div>
-        </div>
+          </div>
+        </Collapsible>
       </div>
     </div>
   );
