@@ -22,10 +22,20 @@ from the archive repo [`shdwelf/Html5-sync-incoming`](https://github.com/shdwelf
 | --- | --- |
 | Workbench app (React + Vite + Tailwind, `src/lib/wallet.ts`, `src/lib/syllables.ts`, `src/lib/enso.ts`) | `build-bip-39-haiku-wallet.zip` |
 | Piped inbox concept and UI | `hyper-portal-2.27.0-PIPED-installer.html` (inside `Internal storage.7z`) |
+| Recovery Lab (missing-word brute force, typo/anagram repair, vanity mining) | `crypto-mnemonic-mining-app.zip` |
+| Art Gallery catalog, greedy 5-7-5 fallback, syllable-exception cleanup | vanilla workbench in [`shdwelf/Html5`](https://github.com/shdwelf/Html5) (`js/haiku-catalog.js`, `js/syllables.js`) |
+| Vault file format + standalone decryptor | `HAIKUv4/v5`/`DECRYPTORv1.html` lineage (`Haiku Supplies.zip`) and the vanilla workbench's WebCrypto vault |
 
 The two never shipped together: the haiku workbench had no inbox, and the
 hyper-portal build that had the inbox had no haiku tool. Wiring them together —
 and repairing the inbox on the way — is what this repo does.
+
+`scripts/wormhole-fetch.mjs` is a small utility kept from that recovery work:
+given `WH_URL=<link>` it opens a wormhole.app drop in real chromium (via
+playwright) and captures every file — the link is end-to-end encrypted in the
+URL fragment, so only a real browser can decrypt it. It runs anywhere
+playwright + chromium are installed (a laptop, a GitHub runner with the
+workflow permission).
 
 ## Tools
 
@@ -34,10 +44,98 @@ and repairing the inbox on the way — is what this repo does.
 | **Ensō Forge** | Parameterised ensō brushstroke; its packed *Ensō ID* doubles as the vault password. |
 | **Haiku Wallet** | Mines 128-bit mnemonics until the 12 words partition into 5-7-5, derives `m/44'/0'/0'/0/0`, stores them in an AES-256 vault. |
 | **Inspector** | Validates a phrase's BIP-39 checksum, shows its syllable/5-7-5 breakdown, derives address + xpub. |
+| **Recovery Lab** | Brute-forces `?` words, repairs typos/anagrams, mines BTC vanity addresses — optionally pinned to an address fragment you know is yours. |
+| **Art Gallery** | 100 curated checksum-valid BIP-39 art patterns (repeat stems, haiku/poetic scans), re-verified live on every render. |
 | **MonKey Miner** | Mines Banano wallets for rare monKey accessories, fully offline. |
 | **Autobiography** | Chapters plus an embedded filesystem; exports as one self-contained HTML book. |
 | **Crypto Cookbook** | The 83-section reference, framed byte-identical from `/apps/cookbook/`. |
 | Terminal / wAves / Market | Carried over from the original build. |
+
+## Recovery Lab
+
+Ported from the recovered `crypto-mnemonic-mining-app` (June 2026, ethers-based)
+onto this repo's own stack — `@scure/bip39` for checksums, the wallet's BTC
+P2PKH derivation instead of ethers/bananojs, no new heavy dependencies.
+
+**Find `?` words.** Mark each unread word with `?`. A BIP-39 phrase carries its
+own checksum, so of the 2048 words that could fill a slot only ~1 in 16
+survives for a 12-word phrase (1 in 256 for 24 words) — the checksum does most
+of the work. One missing slot scans instantly; two walks 2048² = 4.2M
+combinations chunked and cancellably (a few minutes at most; more than two is
+out of scope for a browser lab).
+
+**Repair typos & anagrams.** Words outside the wordlist are replaced by their
+anagrams (the wordlist has 56 anagram classes: `canoe/ocean`, `armed/dream`,
+`alert/alter/later`…) and near edits — Levenshtein distance ≤ 2. If every word
+is valid but the checksum still fails, each single word is tried against its
+edit-distance-≤ 1 neighbours plus anagram mates, catching the silent swap that
+spell-check cannot see.
+
+**Pinning to an address.** Repairs and fills frequently have *several*
+checksum-valid outcomes — the checksum cannot tell them apart. Paste the first
+characters of an address you know the wallet owned and only candidates whose
+BTC legacy derivation contains that fragment survive. That is also what makes
+recovery deterministic instead of "first 20 valid hits".
+
+**Vanity mining.** Mines fresh 12-word mnemonics until the BTC legacy address
+starts with your prefix (case-sensitive Base58; the leading `1` is optional).
+Each extra character is ~58× the work: two characters are seconds, three are
+minutes, four are a long night. Cancels like everything else.
+
+## Art Gallery
+
+The 100-entry catalog shipped with the vanilla workbench port
+(`js/haiku-catalog.js` in `shdwelf/Html5`): 40 eleven-word repeat stems with
+their checksum word, 20 fifteen-word, 10 twenty-four-word patterns, and 30
+haiku/poetic scans. In BIP-39 the last word is never free — its low bits are
+the checksum of everything before it — so an eleven-word stem of one repeated
+word pins exactly one valid ending. The stem is chosen; the checksum decides
+the last word. These are found art.
+
+Every card re-validates its phrase against the real BIP-39 checksum on render
+(and `test/catalog.test.ts` locks all 100), so a corrupted import is visible
+immediately. Haiku entries display their greedy 5-7-5 layout with per-line
+syllable counts, and any entry can be piped to the Inspector.
+
+## Inspector upgrades
+
+- **Per-word chips** under the input — each word with its syllable count,
+  red when not in the wordlist (ported from the mining app's live validation).
+- **Explorer section** (Coleman-style): BIP-39 passphrase ("25th word"),
+  custom derivation path, seed hex, root xpub, and a first-N accounts table.
+  Private keys stay hidden behind a per-row reveal; the root xprv is never
+  rendered. A passphrase changing every derived address is demonstrated in
+  `test/syllables-explorer.test.ts`.
+- **Greedy 5-7-5 fallback** now lives in `src/lib/syllables.ts`
+  (`greedy575`), shared by the Inspector and by `itemFromMnemonic`, replacing
+  the old behaviour of dumping a non-haiku phrase onto a single line. The
+  ported version had a defect: words after the third line filled were
+  silently dropped. Fixed here — the layout always accounts for every word —
+  and locked by test.
+- The syllable **exception table** dropped three dead keys (`area51`,
+  `create_`, `science_`) that could never match after non-letters are
+  stripped.
+
+## Vault files and the standalone decryptor
+
+Besides the existing crypto-js exports, the wallet now speaks a
+format-designed-for-archival vault file:
+
+```
+haiku-vault-v1.<base64( 0x01 | salt(16) | iv(12) | ciphertext‖tag )>
+```
+
+AES-256-GCM, PBKDF2-HMAC-SHA256 × 120,000, salt separate from the IV so one
+Ensō ID can safely back multiple files. Implemented with `@noble/ciphers` in
+the app; round-trip, wrong-password and single-character-tamper cases are
+covered by `test/vaultfile.test.ts`.
+
+**🧰 Standalone decryptor ⬇** generates a single self-contained HTML page
+(no imports, no network, verified by test) that decrypts `.haikuvault` files
+with native WebCrypto — optionally with the current vault pre-embedded. Save
+it next to your backups: it opens from a USB stick in fifty years' time, which
+is the whole point of an offline vault. **📥 Import .haikuvault** decrypts
+with the current Ensō ID and merges without duplicates.
 
 ## The piped inbox
 
@@ -367,11 +465,19 @@ src/
     vfs.ts                 content-addressed IndexedDB filesystem for the book
     bookImport.ts          vault recovery, genealogy filing, server control
     monkey/                accessory catalog + offline deterministic generation
-    wallet.ts              BIP-39/44, 5-7-5 partitioning, mining, AES vault
-    syllables.ts           heuristic syllable counter
+    wallet.ts              BIP-39/44 (passphrase + custom paths), 5-7-5 partitioning, mining, AES vault, explorer
+    recovery.ts            ?-word brute force, typo/anagram repair, BTC vanity mining
+    catalog.ts             100 curated checksum-valid art patterns
+    vaultfile.ts           AES-GCM .haikuvault format + standalone decryptor generator
+    syllables.ts           heuristic syllable counter, greedy 5-7-5 layout
     enso.ts, rng.ts        ensō rendering + seeded RNG
   components/              tool tabs
 test/
+  recovery.test.ts         brute force, repairs, address pinning, vanity
+  catalog.test.ts          all 100 entries checksum-valid, types, uniqueness
+  vaultfile.test.ts        format round-trip, tamper, decryptor self-containment
+  syllables-explorer.test.ts  greedy layout, exception hygiene, explorer derivation
+  new-tabs.test.tsx        render smoke: Recovery Lab, Art Gallery, wallet buttons
   vfs.test.ts              filesystem: dedupe, refcounted delete, persistence
   book.test.ts             chapter rendering, escaping, single-file export
   book-import.test.ts      vault recovery, genealogy citations, micro_httpd paths

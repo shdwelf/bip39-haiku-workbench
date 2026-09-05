@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import {
   HaikuWalletItem,
   mineOne,
@@ -9,6 +9,12 @@ import {
   exportPlainTxt,
   itemFromMnemonic,
 } from "../lib/wallet";
+import {
+  decryptVaultFile,
+  downloadStandaloneDecryptor,
+  downloadVaultFile,
+  encryptVaultFile,
+} from "../lib/vaultfile";
 import { drawEnso } from "../lib/enso";
 import { decodeEnsoId } from "../lib/enso";
 import { PipeInButton, PipeOutButton } from "../pipe/PipeButtons";
@@ -38,6 +44,43 @@ export default function HaikuWallet({ ensoId }: Props) {
   const [forged, setForged] = useState(0);
   const cancel = useRef(false);
   const [imported, setImported] = useState<string | null>(null);
+  const [vaultMsg, setVaultMsg] = useState<string | null>(null);
+  const vaultFileInput = useRef<HTMLInputElement>(null);
+
+  // Import a .haikuvault file (AES-256-GCM, PBKDF2 x120k) using the current
+  // Ensō ID as the password, merging into the vault without duplicates.
+  const onVaultFile = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // allow re-selecting the same file
+    if (!file) return;
+    try {
+      const blob = await file.text();
+      const parsed = decryptVaultFile(blob, ensoId);
+      const incoming = Array.isArray(parsed) ? parsed : [];
+      let added = 0;
+      setItems((prev) => {
+        const seen = new Set(prev.map((p) => p.mnemonic));
+        const fresh = incoming.filter(
+          (it): it is HaikuWalletItem =>
+            !!it && typeof it.mnemonic === "string" && !seen.has(it.mnemonic)
+        );
+        added = fresh.length;
+        const next = [...fresh, ...prev];
+        saveVault(next, ensoId);
+        return next;
+      });
+      setVaultMsg(
+        added > 0
+          ? `Imported ${added} wallet${added > 1 ? "s" : ""} from ${file.name}.`
+          : `No new wallets in ${file.name} (all already present, or the file was empty).`
+      );
+    } catch {
+      setVaultMsg(
+        `Could not decrypt ${file.name} with the current Ensō ID — wrong key or damaged file.`
+      );
+    }
+    window.setTimeout(() => setVaultMsg(null), 4200);
+  };
 
   // Accept a mnemonic piped in from another tool and fold it into the vault.
   usePipeReceiver("wallet", (d) => {
@@ -225,6 +268,39 @@ export default function HaikuWallet({ ensoId }: Props) {
               ⬇ Export plain .txt
             </button>
             <button
+              onClick={() => downloadVaultFile(items, ensoId)}
+              disabled={!items.length}
+              title="AES-256-GCM vault file (PBKDF2 ×120k) — decryptable by the standalone decryptor"
+              className="rounded-lg border border-cyan-800 px-3 py-1.5 text-xs text-cyan-300 hover:bg-cyan-950/40 disabled:opacity-40"
+            >
+              🔐 Export .haikuvault
+            </button>
+            <button
+              onClick={() =>
+                downloadStandaloneDecryptor(
+                  items.length ? encryptVaultFile(items, ensoId) : undefined
+                )
+              }
+              title="Self-contained HTML page that opens .haikuvault files with your Ensō ID — no network, no dependencies"
+              className="rounded-lg border border-cyan-800 px-3 py-1.5 text-xs text-cyan-300 hover:bg-cyan-950/40"
+            >
+              🧰 Standalone decryptor ⬇
+            </button>
+            <button
+              onClick={() => vaultFileInput.current?.click()}
+              title="Import a .haikuvault file, decrypting with the current Ensō ID"
+              className="rounded-lg border border-zinc-700 px-3 py-1.5 text-xs hover:bg-zinc-800"
+            >
+              📥 Import .haikuvault
+            </button>
+            <input
+              ref={vaultFileInput}
+              type="file"
+              accept=".haikuvault,text/plain"
+              className="hidden"
+              onChange={onVaultFile}
+            />
+            <button
               onClick={clearAll}
               disabled={!items.length}
               className="rounded-lg border border-rose-900 px-3 py-1.5 text-xs text-rose-300 hover:bg-rose-950/40 disabled:opacity-40"
@@ -232,6 +308,11 @@ export default function HaikuWallet({ ensoId }: Props) {
               🗑 Clear vault
             </button>
           </div>
+          {vaultMsg && (
+            <p className="mt-2 rounded border border-cyan-500/30 bg-cyan-500/10 px-2 py-1 text-[11px] text-cyan-300">
+              {vaultMsg}
+            </p>
+          )}
           <p className="text-[11px] text-zinc-600">
             Vault is AES-256 encrypted with your Ensō ID and saved to an encrypted
             cookie + localStorage for offline persistence.

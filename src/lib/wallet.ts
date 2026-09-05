@@ -4,7 +4,7 @@ import { HDKey } from "@scure/bip32";
 import { sha256 } from "@noble/hashes/sha2.js";
 import { ripemd160 } from "@noble/hashes/legacy.js";
 import CryptoJS from "crypto-js";
-import { countSyllables, countLineSyllables } from "./syllables";
+import { countSyllables, greedy575 } from "./syllables";
 
 export const WORDLIST = wordlist; // permanent local record of the 2048 BIP-39 words
 
@@ -46,21 +46,98 @@ export interface DerivedAddresses {
   xpub: string;
 }
 
-export function deriveAddresses(mnemonic: string): DerivedAddresses {
-  const seed = bip39.mnemonicToSeedSync(mnemonic);
-  const root = HDKey.fromMasterSeed(seed);
-  const path = "m/44'/0'/0'/0/0";
-  const child = root.derive(path);
+export interface DeriveOptions {
+  /** BIP-39 passphrase ("25th word"). Default: none. */
+  passphrase?: string;
+  /** Derivation path. Default: m/44'/0'/0'/0/0. */
+  path?: string;
+}
+
+/** P2PKH address for the (optionally hardened) derivation. */
+export function btcLegacyAddress(child: HDKey): string {
   const pub = child.publicKey!; // 33-byte compressed
   const h160 = ripemd160(sha256(pub));
   const payload = new Uint8Array(21);
   payload[0] = 0x00; // mainnet P2PKH version
   payload.set(h160, 1);
-  const account = root.derive("m/44'/0'/0'");
+  return base58check(payload);
+}
+
+export function deriveAddresses(
+  mnemonic: string,
+  opts: DeriveOptions = {}
+): DerivedAddresses {
+  const seed = bip39.mnemonicToSeedSync(mnemonic, opts.passphrase);
+  const root = HDKey.fromMasterSeed(seed);
+  const path = opts.path ?? "m/44'/0'/0'/0/0";
+  const child = root.derive(path);
+  // account-level xpub: strip the final two path segments
+  const parts = path.split("/");
+  const accountPath = parts.slice(0, Math.max(3, parts.length - 2)).join("/");
+  const account = root.derive(accountPath);
   return {
-    btcLegacy: base58check(payload),
+    btcLegacy: btcLegacyAddress(child),
     path,
     xpub: account.publicExtendedKey,
+  };
+}
+
+export interface AccountRow {
+  index: number;
+  path: string;
+  address: string;
+  publicKey: string;
+  privateKey: string;
+}
+
+export interface ExplorerDetails {
+  /** Hex of the BIP-39 seed (after PBKDF2, before BIP-32). */
+  seedHex: string;
+  rootXprv: string;
+  rootXpub: string;
+  accounts: AccountRow[];
+}
+
+/**
+ * Coleman-style multi-account derivation: takes a base path ending in an index
+ * and derives `count` siblings (…/0, …/1, …). Exposed keys are for education —
+ * never paste a real xprv anywhere.
+ */
+export function deriveAccounts(
+  mnemonic: string,
+  opts: {
+    passphrase?: string;
+    path?: string; // default m/44'/0'/0'/0/0
+    count?: number; // default 5
+  } = {}
+): ExplorerDetails {
+  const path = opts.path ?? "m/44'/0'/0'/0/0";
+  const count = Math.max(1, Math.min(10, opts.count ?? 5));
+  const seed = bip39.mnemonicToSeedSync(mnemonic, opts.passphrase);
+  const root = HDKey.fromMasterSeed(seed);
+  const parts = path.split("/");
+  const base = parts.slice(0, -1).join("/");
+  const accounts: AccountRow[] = [];
+  for (let i = 0; i < count; i++) {
+    const p = `${base}/${i}`;
+    const child = root.derive(p);
+    accounts.push({
+      index: i,
+      path: p,
+      address: btcLegacyAddress(child),
+      publicKey: child.publicKey
+        ? Array.from(child.publicKey, (b) => b.toString(16).padStart(2, "0")).join("")
+        : "",
+      privateKey: child.privateKey
+        ? Array.from(child.privateKey, (b) => b.toString(16).padStart(2, "0")).join("")
+        : "",
+    });
+  }
+  return {
+    seedHex: Array.from(seed, (b) => b.toString(16).padStart(2, "0")).join(""),
+    rootXprv: root.privateExtendedKey!,
+    rootXpub: root.publicExtendedKey,
+    accounts,
   };
 }
 
@@ -179,11 +256,15 @@ export function itemFromMnemonic(
   const words = phrase.split(" ");
   const part = partition575(words);
   const addr = deriveAddresses(phrase);
+  // When the words do not contain a clean 5/7/5 partition, keep the greedy
+  // best-effort shape (vanilla-workbench behaviour) instead of dumping every
+  // word onto a single line.
+  const greedy = greedy575(words);
   return {
     id: "HK" + Math.random().toString(36).slice(2, 8).toUpperCase(),
     mnemonic: phrase,
-    lines: part ? part.lines : [words.join(" "), "", ""],
-    counts: part ? part.counts : [countLineSyllables(words.join(" ")), 0, 0],
+    lines: part ? part.lines : greedy.lines.map((l) => l.join(" ")),
+    counts: part ? part.counts : greedy.counts,
     address: addr.btcLegacy,
     path: addr.path,
     ensoId,

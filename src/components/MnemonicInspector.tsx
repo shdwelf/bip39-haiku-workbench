@@ -1,6 +1,12 @@
 import { useMemo, useState } from "react";
-import { deriveAddresses, validateMnemonic, WORDLIST } from "../lib/wallet";
-import { countSyllables } from "../lib/syllables";
+import {
+  deriveAccounts,
+  deriveAddresses,
+  validateMnemonic,
+  WORDLIST,
+  type ExplorerDetails,
+} from "../lib/wallet";
+import { countSyllables, greedy575 } from "../lib/syllables";
 import { PipeInButton, PipeOutButton } from "../pipe/PipeButtons";
 import { usePipeReceiver } from "../pipe/PipeProvider";
 import Collapsible from "../shell/Collapsible";
@@ -11,6 +17,10 @@ const TOOL_NAME = "Mnemonic Inspector";
 export default function MnemonicInspector() {
   const [text, setText] = useState("");
   const [flash, setFlash] = useState<string | null>(null);
+  // Coleman-style explorer inputs (ported from the recovered mining app).
+  const [passphrase, setPassphrase] = useState("");
+  const [path, setPath] = useState("m/44'/0'/0'/0/0");
+  const [accountCount, setAccountCount] = useState(5);
 
   // Deliveries pushed at this tool from the inbox land here.
   usePipeReceiver(TOOL_ID, (d) => {
@@ -31,24 +41,11 @@ export default function MnemonicInspector() {
     const syllables = words.map(countSyllables);
     const total = syllables.reduce((a, b) => a + b, 0);
 
-    // Greedy 5/7/5 split across the word sequence.
-    const lines: string[][] = [[], [], []];
-    const targets = [5, 7, 5];
-    let li = 0;
-    let acc = 0;
-    for (let i = 0; i < words.length && li < 3; i++) {
-      lines[li].push(words[i]);
-      acc += syllables[i];
-      if (acc >= targets[li]) {
-        li++;
-        acc = 0;
-      }
-    }
-    const counts = lines.map((l) =>
-      l.reduce((s, w) => s + countSyllables(w), 0)
-    );
-    const isHaiku =
-      counts[0] === 5 && counts[1] === 7 && counts[2] === 5 && li >= 2;
+    // Best-effort greedy 5/7/5 split (exact partition is a special case).
+    const split = greedy575(words);
+    const lines = split.lines;
+    const counts = split.counts;
+    const isHaiku = split.isHaiku;
 
     let derived: { btcLegacy: string; path: string; xpub: string } | null = null;
     if (valid) {
@@ -61,6 +58,20 @@ export default function MnemonicInspector() {
 
     return { unknown, valid, syllables, total, lines, counts, isHaiku, derived };
   }, [words]);
+
+  // Multi-account explorer — only for checksum-valid phrases.
+  const explorer: ExplorerDetails | null = useMemo(() => {
+    if (!analysis?.valid) return null;
+    try {
+      return deriveAccounts(text.toLowerCase().trim(), {
+        passphrase: passphrase || undefined,
+        path,
+        count: accountCount,
+      });
+    } catch {
+      return null;
+    }
+  }, [analysis?.valid, text, passphrase, path, accountCount]);
 
   return (
     <div className="space-y-4">
@@ -107,9 +118,40 @@ export default function MnemonicInspector() {
           onChange={(e) => setText(e.target.value)}
           rows={3}
           spellCheck={false}
+          aria-label="Mnemonic phrase"
           placeholder="abandon ability able about above absent…"
           className="w-full resize-y rounded-lg border border-zinc-800 bg-zinc-950 p-3 font-mono text-sm text-emerald-300 outline-none focus:border-cyan-600"
         />
+
+        {analysis && (
+          <div className="mt-2 flex flex-wrap gap-1">
+            {words.map((w, i) => {
+              const ok = WORDLIST.includes(w);
+              return (
+                <span
+                  key={i}
+                  title={
+                    ok
+                      ? `${countSyllables(w)} syllable${analysis.syllables[i] === 1 ? "" : "s"}`
+                      : "not in the BIP-39 wordlist"
+                  }
+                  className={`rounded px-1.5 py-0.5 font-mono text-[10px] ${
+                    ok
+                      ? "bg-zinc-900 text-zinc-400"
+                      : "bg-rose-500/15 text-rose-300"
+                  }`}
+                >
+                  {w}
+                  {ok ? (
+                    <span className="ml-1 text-cyan-500/70">
+                      {analysis.syllables[i]}
+                    </span>
+                  ) : null}
+                </span>
+              );
+            })}
+          </div>
+        )}
       </section>
 
       {analysis && (
@@ -207,6 +249,97 @@ export default function MnemonicInspector() {
               </div>
             </Collapsible>
           )}
+
+          {explorer && (
+            <Collapsible
+              className="lg:col-span-2"
+              storageKey="bhw.insp.explorer"
+              title="Explorer — passphrase, custom path, accounts"
+              icon="🧭"
+            >
+              <div className="mb-3 grid gap-2 sm:grid-cols-3">
+                <label className="block text-[11px] text-zinc-500">
+                  BIP-39 passphrase (25th word)
+                  <input
+                    type="password"
+                    value={passphrase}
+                    onChange={(e) => setPassphrase(e.target.value)}
+                    autoComplete="off"
+                    placeholder="(none)"
+                    className="mt-1 w-full rounded border border-zinc-700 bg-zinc-900 px-2 py-1 font-mono text-xs text-zinc-200"
+                  />
+                </label>
+                <label className="block text-[11px] text-zinc-500">
+                  Derivation path
+                  <input
+                    value={path}
+                    onChange={(e) => setPath(e.target.value)}
+                    spellCheck={false}
+                    className="mt-1 w-full rounded border border-zinc-700 bg-zinc-900 px-2 py-1 font-mono text-xs text-zinc-200"
+                  />
+                </label>
+                <label className="block text-[11px] text-zinc-500">
+                  Accounts ({accountCount})
+                  <input
+                    type="range"
+                    min={1}
+                    max={10}
+                    value={accountCount}
+                    onChange={(e) => setAccountCount(+e.target.value)}
+                    className="mt-3 w-full accent-cyan-400"
+                  />
+                </label>
+              </div>
+
+              <div className="mb-3 grid gap-2 lg:grid-cols-2">
+                <Mono
+                  label="Seed (hex)"
+                  value={explorer.seedHex}
+                  pipe={{
+                    content: explorer.seedHex,
+                    contentType: "text" as const,
+                    sourceId: TOOL_ID,
+                    sourceName: TOOL_NAME,
+                    label: "seed hex",
+                  }}
+                />
+                <Mono
+                  label="Root xpub"
+                  value={explorer.rootXpub}
+                  pipe={{
+                    content: explorer.rootXpub,
+                    contentType: "xpub" as const,
+                    sourceId: TOOL_ID,
+                    sourceName: TOOL_NAME,
+                    label: "root xpub",
+                  }}
+                />
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="text-[10px] uppercase tracking-wide text-zinc-500">
+                      <th className="px-2 py-1">#</th>
+                      <th className="px-2 py-1">Path</th>
+                      <th className="px-2 py-1">BTC legacy</th>
+                      <th className="px-2 py-1">Reveal key</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {explorer.accounts.map((a) => (
+                      <AccountRow key={a.path} a={a} />
+                    ))}
+                  </tbody>
+                </table>
+                <p className="mt-2 text-[10px] text-zinc-600">
+                  Private keys stay hidden until revealed per row; the root xprv
+                  is never rendered. A passphrase changes every derived key —
+                  that is the point of the 25th word.
+                </p>
+              </div>
+            </Collapsible>
+          )}
         </section>
       )}
     </div>
@@ -235,6 +368,30 @@ function Row({
       <dt className="text-zinc-500">{label}</dt>
       <dd className={`font-mono ${tint}`}>{value}</dd>
     </div>
+  );
+}
+
+function AccountRow({ a }: { a: { index: number; path: string; address: string; privateKey: string } }) {
+  const [show, setShow] = useState(false);
+  return (
+    <tr className="border-t border-zinc-800/60">
+      <td className="px-2 py-1.5 font-mono text-zinc-500">{a.index}</td>
+      <td className="px-2 py-1.5 font-mono text-zinc-400">{a.path}</td>
+      <td className="px-2 py-1.5 font-mono text-cyan-300">{a.address}</td>
+      <td className="px-2 py-1.5">
+        <button
+          onClick={() => setShow((v) => !v)}
+          className="rounded border border-zinc-700 px-1.5 py-0.5 text-[10px] text-zinc-400 hover:text-zinc-200"
+        >
+          {show ? "hide" : "reveal"}
+        </button>
+        {show && (
+          <span className="ml-2 break-all font-mono text-[10px] text-amber-300/80">
+            {a.privateKey}
+          </span>
+        )}
+      </td>
+    </tr>
   );
 }
 
