@@ -145,7 +145,7 @@ via `binStrFromBytes` / `bytesFromBinStr`. Verified on a 4096-byte adversarial
 payload including NULs and `0xFF`: the output equals Node's
 `Buffer.toString("base64")` exactly, while the old UTF-8 path does not.
 
-## MonKey Miner (offline)
+## MonKey Miner
 
 The `🐒 MonKey Miner` tab generates real Banano wallets (`bananocurrency-web`)
 and keeps the ones whose monKey wears the accessories you're hunting.
@@ -153,24 +153,53 @@ and keeps the ones whose monKey wears the accessories you're hunting.
 The original build called `monkey.banano.cc/api/v1/monkey/dtl/<address>` for every
 candidate, so it needed the network, was rate-limited, and produced no cards at
 all offline. Accessories are now derived **locally from the address**, the same
-way the real service derives them deterministically:
+way the real service derives them deterministically.
 
-- For each category, the category is present with probability `CATEGORY_ODDS`.
-- If present, one item is drawn with probability `weight / CATEGORY_TOTAL`.
-- The catalog lists only notable accessories, so the leftover weight forms a
-  "plain" bucket for the unlisted common items — without it every listed
-  accessory would be far too common.
+### Odds are the real ones
 
-That makes the observed frequency equal `probability(a)` from the real appditto
-weights, so hunting a Flamethrower (1 in 941, Epic) is exactly as hard as on the
-live service. `test/monkey-stats.test.ts` mines 300,000 addresses and asserts
-every accessory in the catalog lands inside a 4-sigma binomial window.
+Verified against [appditto/MonKey](https://github.com/appditto/MonKey), whose
+**code** is MIT:
 
-Artwork is drawn locally as SVG from the same address hash and shows the
-accessories that address actually rolled. **It is not the official MonKey art** —
-those assets are not bundled — but it is deterministic and reflects the roll.
+| Source | What it gives |
+| --- | --- |
+| `server/image/accessories.go` | category chances — glasses .25, hat .35, misc .3, shirt/pants .25, shoes .22, tail .2, mouth always |
+| accessory filenames, `[w-N]` | per-item weights |
 
-Keys are generated in the browser. Treat them as toys, not wallets.
+`CATEGORY_ODDS` matched the Go constants exactly. The catalog was missing four
+accessories (`beanie`, `beanie-long`, `cap-backwards`, `smile-normal`); with those
+added it now holds all **68** items and each category's weights sum exactly to
+`CATEGORY_TOTAL`, so nothing is unreachable. `test/monkey-catalog.test.tsx` locks
+this to the upstream numbers, and `test/monkey-stats.test.ts` mines 300,000
+addresses and asserts every accessory lands inside a 4-sigma binomial window.
+
+Sampling draws each category at `CATEGORY_ODDS`, then one item at
+`weight / CATEGORY_TOTAL`. A Flamethrower stays 1 in 941 (Epic).
+
+### Artwork: why the official assets are not bundled
+
+**The official monKey artwork cannot be redistributed.** appditto/MonKey splits
+its licence: the MIT grant covers code only —
+
+> All code is copyrighted by Appditto LLC under the MIT license.
+
+— while the assets are explicitly excluded, and the LICENCE enumerates all 68
+accessory SVGs individually (`flamethrower-[...][w-0.04].svg`, `crown-...`,
+`hat-jester-...`, every body part) under:
+
+> The monKey logo, animations, and all assets including those in the "src/static"
+> and "server/assets" folders are copyrighted by Appditto LLC and used by
+> permission **for this project only**. Use of these assets without express
+> written consent from Appditto LLC for any reason is **strictly forbidden**.
+
+Copying them into this repo would breach that, so the miner offers two modes:
+
+| Mode | Behaviour |
+| --- | --- |
+| **✏️ Offline art** (default) | Deterministic SVG drawn locally from the address hash, showing the accessories it rolled. Not the official art. No network. |
+| **🖼 Official art** | Loads the real monKey from `monkey.banano.cc` at runtime — using the public service as intended, redistributing nothing. Falls back to the offline drawing if unreachable. |
+
+Toggle it from the miner header; the choice persists. If you obtain written
+consent from Appditto, the swap is `MonkeyAvatar` → composite the real layers.
 
 ## Collapsible shell
 

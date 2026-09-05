@@ -57,8 +57,9 @@ export function oneInN(a: AccessoryDef): number {
   return p > 0 ? Math.round(1 / p) : Infinity;
 }
 
-// We focus on rare / interesting accessories. Common ones (smile, plain shoes,
-// plain shirts) are not included as "targets".
+// Complete catalog: all 68 accessories, cross-checked against the filenames and
+// [w-N] weights in appditto/MonKey's server/assets/illustrations/accessories.
+// Per-category weights therefore sum exactly to CATEGORY_TOTAL.
 export const ACCESSORIES: AccessoryDef[] = [
   // 🔥 MISC — the legendary flamethrower lives here
   { id: "flamethrower", name: "Flamethrower", category: "misc", match: "flamethrower", weight: 0.04, emoji: "🔥" },
@@ -98,6 +99,9 @@ export const ACCESSORIES: AccessoryDef[] = [
   { id: "bandana", name: "Bandana", category: "hat", match: "bandana", weight: 1, emoji: "🏴" },
   { id: "beanie-banano", name: "Banano Beanie", category: "hat", match: "beanie-banano", weight: 1, emoji: "🍌" },
   { id: "beanie-long-banano", name: "Long Banano Beanie", category: "hat", match: "beanie-long-banano", weight: 1, emoji: "🍌" },
+  { id: "beanie", name: "Beanie", category: "hat", match: "beanie-[", weight: 1, emoji: "🧢" },
+  { id: "beanie-long", name: "Long Beanie", category: "hat", match: "beanie-long-[", weight: 1, emoji: "🧢" },
+  { id: "cap-backwards", name: "Backwards Cap", category: "hat", match: "cap-backwards", weight: 1, emoji: "🧢" },
 
   // 👓 GLASSES
   { id: "monocle", name: "Monocle", category: "glasses", match: "monocle", weight: 0.5, emoji: "🧐" },
@@ -118,6 +122,7 @@ export const ACCESSORIES: AccessoryDef[] = [
   { id: "confused", name: "Confused Face", category: "mouth", match: "confused", weight: 1, emoji: "😕" },
   { id: "meh", name: "Meh Face", category: "mouth", match: "meh", weight: 1, emoji: "😐" },
   { id: "toothy", name: "Toothy Grin", category: "mouth", match: "smile-big-teeth", weight: 1, emoji: "😁" },
+  { id: "smile", name: "Normal Smile", category: "mouth", match: "smile-normal", weight: 1, emoji: "🙂" },
 
   // 👕 SHIRT & PANTS
   { id: "overalls-blue", name: "Blue Overalls", category: "shirt_and_pants", match: "overalls-blue", weight: 1, emoji: "👖" },

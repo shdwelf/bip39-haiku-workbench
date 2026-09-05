@@ -8,9 +8,11 @@ import {
   type AccessoryDef,
   type Category,
 } from "../lib/monkey/accessories";
-import { accessoriesFor, monkeySvg } from "../lib/monkey/generate";
+import { accessoriesFor } from "../lib/monkey/generate";
+import MonkeyAvatar, { type ArtMode } from "./MonkeyAvatar";
 import { PipeOutButton } from "../pipe/PipeButtons";
 import Collapsible from "../shell/Collapsible";
+import { usePersistentState } from "../shell/hooks";
 
 const TOOL_ID = "monkey";
 const TOOL_NAME = "MonKey Miner";
@@ -49,6 +51,10 @@ export default function MonkeyMiner() {
   const [found, setFound] = useState<Found[]>([]);
   const [selected, setSelected] = useState<Found | null>(null);
   const [elapsed, setElapsed] = useState(0);
+  const [artMode, setArtMode] = usePersistentState<ArtMode>(
+    "bhw.monkey.artMode",
+    "offline"
+  );
 
   const runRef = useRef(false);
   const startRef = useRef(0);
@@ -184,6 +190,23 @@ export default function MonkeyMiner() {
             >
               Reset
             </button>
+            <button
+              onClick={() =>
+                setArtMode((m) => (m === "offline" ? "official" : "offline"))
+              }
+              title={
+                artMode === "official"
+                  ? "Fetching artwork from monkey.banano.cc"
+                  : "Drawing artwork locally — no network"
+              }
+              className={`rounded-lg border px-3 py-2 text-xs transition ${
+                artMode === "official"
+                  ? "border-amber-400/50 bg-amber-400/15 text-amber-200"
+                  : "border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+              }`}
+            >
+              {artMode === "official" ? "🖼 Official art" : "✏️ Offline art"}
+            </button>
           </div>
         </div>
 
@@ -281,24 +304,42 @@ export default function MonkeyMiner() {
         ) : (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {found.map((m) => (
-              <MonkeyCard key={m.id} m={m} onOpen={() => setSelected(m)} />
+              <MonkeyCard
+                key={m.id}
+                m={m}
+                artMode={artMode}
+                onOpen={() => setSelected(m)}
+              />
             ))}
           </div>
         )}
       </Collapsible>
 
-      {selected && <Detail m={selected} onClose={() => setSelected(null)} />}
+      {selected && (
+        <Detail m={selected} artMode={artMode} onClose={() => setSelected(null)} />
+      )}
 
       <p className="text-[11px] text-zinc-600">
-        Artwork is drawn locally from the address and is not the official MonKey
-        art. Accessory odds use the real appditto weights, so rarity matches the
-        live service. Keys are generated in your browser — treat them as toys.
+        Accessory odds use the real appditto weights and category chances, so
+        rarity matches the live service exactly. <strong>Offline art</strong> is
+        drawn locally and is not the official MonKey art — those assets are
+        proprietary and cannot be bundled. <strong>Official art</strong> fetches
+        from monkey.banano.cc and needs a network connection. Keys are generated
+        in your browser — treat them as toys.
       </p>
     </div>
   );
 }
 
-function MonkeyCard({ m, onOpen }: { m: Found; onOpen: () => void }) {
+function MonkeyCard({
+  m,
+  artMode,
+  onOpen,
+}: {
+  m: Found;
+  artMode: ArtMode;
+  onOpen: () => void;
+}) {
   const tier = rarityTier(m.rarest);
   return (
     <button
@@ -307,10 +348,7 @@ function MonkeyCard({ m, onOpen }: { m: Found; onOpen: () => void }) {
       style={{ borderColor: tier.color + "66" }}
     >
       <div className="flex gap-3">
-        <div
-          className="shrink-0 overflow-hidden rounded-lg"
-          dangerouslySetInnerHTML={{ __html: monkeySvg(m.address, 88) }}
-        />
+        <MonkeyAvatar address={m.address} size={88} mode={artMode} />
         <div className="min-w-0 flex-1">
           <span
             className="rounded-full px-2 py-0.5 text-[10px] font-black"
@@ -337,7 +375,15 @@ function MonkeyCard({ m, onOpen }: { m: Found; onOpen: () => void }) {
   );
 }
 
-function Detail({ m, onClose }: { m: Found; onClose: () => void }) {
+function Detail({
+  m,
+  artMode,
+  onClose,
+}: {
+  m: Found;
+  artMode: ArtMode;
+  onClose: () => void;
+}) {
   const tier = rarityTier(m.rarest);
   return (
     <>
@@ -353,7 +399,7 @@ function Detail({ m, onClose }: { m: Found; onClose: () => void }) {
           </button>
         </div>
         <div className="mt-3 flex gap-4">
-          <div dangerouslySetInnerHTML={{ __html: monkeySvg(m.address, 150) }} />
+          <MonkeyAvatar address={m.address} size={150} mode={artMode} />
           <div className="min-w-0 flex-1 space-y-2">
             <span
               className="rounded-full px-2 py-0.5 text-[11px] font-black"
