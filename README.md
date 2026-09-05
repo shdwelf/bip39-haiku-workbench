@@ -35,6 +35,8 @@ and repairing the inbox on the way — is what this repo does.
 | **Haiku Wallet** | Mines 128-bit mnemonics until the 12 words partition into 5-7-5, derives `m/44'/0'/0'/0/0`, stores them in an AES-256 vault. |
 | **Inspector** | Validates a phrase's BIP-39 checksum, shows its syllable/5-7-5 breakdown, derives address + xpub. |
 | **MonKey Miner** | Mines Banano wallets for rare monKey accessories, fully offline. |
+| **Autobiography** | Chapters plus an embedded filesystem; exports as one self-contained HTML book. |
+| **Crypto Cookbook** | The 83-section reference, framed byte-identical from `/apps/cookbook/`. |
 | Terminal / wAves / Market | Carried over from the original build. |
 
 ## The piped inbox
@@ -108,6 +110,7 @@ over the dev server's origin rather than `file://`:
 | `/apps/` | Index, with a live secure-context / microphone check |
 | `/apps/anc-studio/` | ANC Studio Ultra — adaptive multi-band FxLMS over AudioWorklet |
 | `/apps/cyberchef/` | CyberChef Renovated Kitchen — 336 recipes, plus file input and save |
+| `/apps/cookbook/` | Crypto Cookbook — 83-section reference, framed by the Cookbook tab |
 | `/apps/cryptofountain-bbs/` | CryptoFountain BBS — P2P microblogging with erasure codes |
 
 The BBS shipped with a Cloudflare Insights beacon; it has been stripped so the
@@ -201,6 +204,54 @@ Copying them into this repo would breach that, so the miner offers two modes:
 Toggle it from the miner header; the choice persists. If you obtain written
 consent from Appditto, the swap is `MonkeyAvatar` → composite the real layers.
 
+## Autobiography and the embedded filesystem
+
+The `📖 Autobiography` tab is a book with its own filesystem, so photographs,
+scans, letters and certificates live *inside* the book rather than beside it.
+
+### The filesystem (`src/lib/vfs.ts`)
+
+IndexedDB, not localStorage — a book's attachments are scans and photographs,
+megabytes rather than kilobytes.
+
+- **Content-addressed.** Every file is hashed with SHA-256 and the bytes are
+  keyed by that hash, so the same scan referenced from three chapters is stored
+  once. `usage()` reports how much duplication was avoided.
+- **Reference-counted deletion.** Removing one of two entries that share content
+  keeps the bytes for the survivor; the blob is only dropped with the last
+  reference. A naive delete-by-hash would silently orphan the other entry, so
+  there is a regression test for exactly that.
+- **Buffers, not Blobs.** Content is stored as `ArrayBuffer`; Blobs do not
+  structured-clone reliably across engines.
+- Entries carry `name`, `dir`, `type`, `size`, `addedAt` and an optional
+  `caption`; metadata edits never touch the content hash.
+
+### Writing
+
+Chapters are plain text — a blank line starts a new paragraph. Attachments are
+referenced as `[[file:name]]`:
+
+- a reference **alone on a line** becomes a captioned `<figure>`;
+- a reference **inside a paragraph** becomes a download link;
+- a reference to a file that is not in the book is flagged, both in the editor
+  and in the output, rather than silently vanishing.
+
+Manuscript text and chapter titles are HTML-escaped, so a diary entry containing
+`<script>` is printed, not executed.
+
+### Export
+
+**⬇ Export book** writes one self-contained HTML file: every attachment is
+inlined as a data URI, there is a linked table of contents, print CSS breaks
+pages at chapters, and the file contains no scripts and no external references.
+It opens from a USB stick in fifty years' time.
+
+### The cookbook
+
+The Crypto Cookbook is served at `/apps/cookbook/` and framed by the
+`📚 Crypto Cookbook` tab, so the document stays byte-identical to the original
+rather than being re-typeset.
+
 ## Collapsible shell
 
 Everything collapses, and the collapse state persists.
@@ -240,12 +291,15 @@ src/
     PipeInboxPanel.tsx     inbox contents for the shell sidebar
     PipeProvider.test.tsx  14 regression tests
   lib/
+    vfs.ts                 content-addressed IndexedDB filesystem for the book
     monkey/                accessory catalog + offline deterministic generation
     wallet.ts              BIP-39/44, 5-7-5 partitioning, mining, AES vault
     syllables.ts           heuristic syllable counter
     enso.ts, rng.ts        ensō rendering + seeded RNG
   components/              tool tabs
 test/
+  vfs.test.ts              filesystem: dedupe, refcounted delete, persistence
+  book.test.ts             chapter rendering, escaping, single-file export
   monkey-stats.test.ts     300k-sample rarity distribution check
   monkey-miner.test.ts     address generation + end-to-end mining
 public/apps/               recovered HTML5 apps, served over HTTPS

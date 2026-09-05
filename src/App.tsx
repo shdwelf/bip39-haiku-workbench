@@ -4,6 +4,8 @@ import EnsoForge from "./components/EnsoForge";
 import HaikuWallet from "./components/HaikuWallet";
 import MnemonicInspector from "./components/MnemonicInspector";
 import MonkeyMiner from "./components/MonkeyMiner";
+import Book from "./components/Book";
+import Cookbook from "./components/Cookbook";
 import Terminal from "./components/Terminal";
 import WavesExchange from "./components/WavesExchange";
 import MarketData from "./components/MarketData";
@@ -16,6 +18,8 @@ const NAV: NavItem[] = [
   { id: "wallet", label: "Haiku Wallet", icon: "🪙" },
   { id: "inspector", label: "Inspector", icon: "🔍" },
   { id: "monkey", label: "MonKey Miner", icon: "🐒" },
+  { id: "book", label: "Autobiography", icon: "📖" },
+  { id: "cookbook", label: "Crypto Cookbook", icon: "📚" },
   { id: "terminal", label: "Terminal / IRC", icon: "▌" },
   { id: "waves", label: "wAves Exchange", icon: "🌊" },
   { id: "market", label: "Market Data", icon: "📈" },
@@ -53,6 +57,8 @@ function Workbench() {
       {activeTab === "wallet" && <HaikuWallet ensoId={ensoId} />}
       {activeTab === "inspector" && <MnemonicInspector />}
       {activeTab === "monkey" && <MonkeyMiner />}
+      {activeTab === "book" && <Book />}
+      {activeTab === "cookbook" && <Cookbook />}
       {activeTab === "terminal" && <Terminal />}
       {activeTab === "waves" && <WavesExchange />}
       {activeTab === "market" && <MarketData />}
