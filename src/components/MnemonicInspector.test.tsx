@@ -42,10 +42,11 @@ describe("Inspector ← piped inbox", () => {
       })
     );
 
-    // The delivery populated the textarea…
-    expect((screen.getByRole("textbox") as HTMLTextAreaElement).value).toBe(
-      VECTOR
-    );
+    // The delivery populated the textarea… (the explorer inputs are also
+    // textboxes now, so the phrase field is addressed by name)
+    expect(
+      (screen.getByRole("textbox", { name: "Mnemonic phrase" }) as HTMLTextAreaElement).value
+    ).toBe(VECTOR);
     // …and the tool analysed it rather than just displaying it.
     expect(screen.getByText("valid ✓")).toBeTruthy();
     expect(screen.getByText(/Received mnemonic from Haiku Wallet/)).toBeTruthy();
