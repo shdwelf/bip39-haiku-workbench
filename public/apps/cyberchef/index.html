@@ -191,6 +191,60 @@ function bytesFromHex(h){h=h.replace(/[^0-9a-fA-F]/g,'');if(h.length%2)h='0'+h;c
    through the text pipeline without UTF-8 mangling it. */
 function binStrFromBytes(bytes){let out="";const CH=0x8000;for(let i=0;i<bytes.length;i+=CH){out+=String.fromCharCode.apply(null,Array.from(bytes.subarray(i,i+CH)));}return out;}
 function bytesFromBinStr(s){const b=new Uint8Array(s.length);for(let i=0;i<s.length;i++)b[i]=s.charCodeAt(i)&0xFF;return b;}
+/* ---- Base62 (URL-safe: 0-9 A-Z a-z, no padding, no escaping) -------------
+   Radix conversion 256 -> 62, so it is byte-exact for binary input. Leading
+   zero bytes are preserved as leading "0" characters, like Base58. */
+const B62_ALPHABET="0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+function b62FromBytes(bytes){
+  if(bytes.length===0)return"";
+  let zeros=0;while(zeros<bytes.length&&bytes[zeros]===0)zeros++;
+  const digits=[];
+  for(let i=zeros;i<bytes.length;i++){
+    let carry=bytes[i];
+    for(let j=0;j<digits.length;j++){carry+=digits[j]*256;digits[j]=carry%62;carry=(carry/62)|0;}
+    while(carry>0){digits.push(carry%62);carry=(carry/62)|0;}
+  }
+  let out="0".repeat(zeros);
+  for(let i=digits.length-1;i>=0;i--)out+=B62_ALPHABET[digits[i]];
+  return out;
+}
+function bytesFromB62(str){
+  const s=String(str).replace(/\s+/g,"");
+  if(!s)return new Uint8Array(0);
+  let zeros=0;while(zeros<s.length&&s[zeros]==="0")zeros++;
+  const bytes=[];
+  for(let i=zeros;i<s.length;i++){
+    const v=B62_ALPHABET.indexOf(s[i]);
+    if(v<0)throw new Error("Invalid Base62 character: "+s[i]);
+    let carry=v;
+    for(let j=0;j<bytes.length;j++){carry+=bytes[j]*62;bytes[j]=carry&0xff;carry>>=8;}
+    while(carry>0){bytes.push(carry&0xff);carry>>=8;}
+  }
+  const out=new Uint8Array(zeros+bytes.length);
+  for(let i=0;i<bytes.length;i++)out[zeros+bytes.length-1-i]=bytes[i];
+  return out;
+}
+/* AES-256-GCM over raw bytes. PBKDF2 salt is separate from the IV so the
+   same password can be reused safely across messages. */
+async function gcmSealBytes(bytes,password){
+  const salt=crypto.getRandomValues(new Uint8Array(16));
+  const iv=crypto.getRandomValues(new Uint8Array(12));
+  const raw=await crypto.subtle.importKey('raw',new TextEncoder().encode(password),'PBKDF2',false,['deriveKey']);
+  const key=await crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:250000,hash:'SHA-256'},raw,{name:'AES-GCM',length:256},false,['encrypt']);
+  const ct=await crypto.subtle.encrypt({name:'AES-GCM',iv,tagLength:128},key,bytes);
+  const out=new Uint8Array(16+12+ct.byteLength);
+  out.set(salt,0);out.set(iv,16);out.set(new Uint8Array(ct),28);
+  return out;
+}
+async function gcmOpenBytes(blob,password){
+  if(blob.length<29)throw new Error("Ciphertext too short");
+  const salt=blob.slice(0,16),iv=blob.slice(16,28),ct=blob.slice(28);
+  const raw=await crypto.subtle.importKey('raw',new TextEncoder().encode(password),'PBKDF2',false,['deriveKey']);
+  const key=await crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:250000,hash:'SHA-256'},raw,{name:'AES-GCM',length:256},false,['decrypt']);
+  try{
+    return new Uint8Array(await crypto.subtle.decrypt({name:'AES-GCM',iv,tagLength:128},key,ct));
+  }catch(e){throw new Error("Wrong password, or the data was altered (GCM auth failed)");}
+}
 function b64FromBytes(bytes){
   const b64="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
   let out="";const arr=Array.from(bytes);
@@ -584,6 +638,57 @@ addOp('binToB64','File / Binary to Base64','Data','Base64-encode raw bytes exact
 });
 addOp('b64ToBin','Base64 to File / Binary','Data','Decode Base64 back to raw bytes. Pair with Save Output to write the original file.',[],
   function(t,a){return binStrFromBytes(bytesFromB64(t));});
+
+/* ============ BASE62 + ENCRYPT-TO-LINK ============ */
+addOp('toB62','To Base62','Data','Encode bytes as Base62 (0-9 A-Z a-z). URL-safe with no padding or percent-escaping. Byte-exact, so it works on files loaded with Load File.',[],
+  function(t,a){return b62FromBytes(bytesFromBinStr(t));});
+addOp('fromB62','From Base62','Data','Decode Base62 back to raw bytes. Pair with Save Output to write the original file.',[],
+  function(t,a){return binStrFromBytes(bytesFromB62(t));});
+
+addOp('aesGcmFile','AES-GCM File (password)','Encryption',
+  'Authenticated AES-256-GCM over raw bytes \u2014 safe for binary, unlike the text-only AES-GCM op. Output is salt(16)+iv(12)+ciphertext+tag, PBKDF2-SHA256 250k iterations.',
+  [
+    {key:'pass',label:'Password',type:'text',default:''},
+    {key:'mode',label:'Mode',type:'select',default:'encrypt',options:[['encrypt','Encrypt'],['decrypt','Decrypt']]}
+  ],
+  async function(t,a){
+    if(!a.pass)throw new Error("Set a password first");
+    const bytes=bytesFromBinStr(t);
+    if(a.mode==='encrypt')return binStrFromBytes(await gcmSealBytes(bytes,a.pass));
+    return binStrFromBytes(await gcmOpenBytes(bytes,a.pass));
+  });
+
+addOp('encryptLink','Encrypt to Link (AES-GCM + Base62)','Encryption',
+  'Encrypt the input and pack it into a URL fragment: AES-256-GCM, then Base62, then #k=... The fragment is never sent to the server hosting the page. Base62 expands data ~1.34x, so this only suits small payloads.',
+  [
+    {key:'pass',label:'Password',type:'text',default:''},
+    {key:'base',label:'Base URL',type:'text',default:'https://example.com/unlock.html'}
+  ],
+  async function(t,a){
+    if(!a.pass)throw new Error("Set a password first");
+    const sealed=await gcmSealBytes(bytesFromBinStr(t),a.pass);
+    const payload=b62FromBytes(sealed);
+    const url=a.base.replace(/#.*$/,'')+'#k='+payload;
+    let note='';
+    if(url.length>2000){
+      note='\n\n[!] '+url.length+' characters. Most link shorteners and many servers reject URLs over ~2000. '+
+           'Shorteners also routinely drop the part after "#", which is where the ciphertext lives \u2014 '+
+           'test the short link before relying on it, or share the ciphertext as a file instead.';
+    }
+    return url+note;
+  });
+
+addOp('decryptLink','Decrypt from Link','Encryption',
+  'Inverse of Encrypt to Link. Paste the whole URL or just the fragment.',
+  [{key:'pass',label:'Password',type:'text',default:''}],
+  async function(t,a){
+    if(!a.pass)throw new Error("Set a password first");
+    const m=String(t).trim().match(/[#?]k=([0-9A-Za-z]+)/);
+    const payload=m?m[1]:String(t).trim().replace(/\s+/g,'');
+    if(!/^[0-9A-Za-z]+$/.test(payload))throw new Error("No Base62 payload found in that link");
+    return binStrFromBytes(await gcmOpenBytes(bytesFromB62(payload),a.pass));
+  });
+
 addOp('dataUri','File / Binary to Data URI','Data','Wrap raw bytes as a data: URI using the loaded file MIME type.',[
   {key:'mime',label:'MIME type',type:'text',default:''}
 ],function(t,a){

@@ -143,6 +143,30 @@ which corrupts anything that isn't valid UTF-8. Added:
 - **💾 Save Output** — downloads the result. Base64 output is decoded back to
   real bytes, so *File → Base64 → Save* reproduces the original file.
 
+### CyberChef: Base62 and encrypt-to-link
+
+- **To Base62 / From Base62** — radix 256→62 over the `0-9 A-Z a-z` alphabet.
+  URL-safe with no padding and nothing to percent-escape, byte-exact, and
+  leading zero bytes are preserved as leading `0` characters like Base58.
+- **AES-GCM File (password)** — the existing `AES-GCM` op runs data through
+  `TextEncoder`, so it corrupts any non-UTF-8 file. This one operates on raw
+  bytes. Layout is `salt(16) ‖ iv(12) ‖ ciphertext ‖ tag`, PBKDF2-SHA256 at
+  250k iterations, with the salt separate from the IV so one password can be
+  reused across messages.
+- **Encrypt to Link / Decrypt from Link** — packs the ciphertext into a URL
+  fragment (`#k=…`). The fragment is never sent to the server hosting the page.
+
+Verified in Node against a 2,000-byte binary with leading zeros: exact
+round-trip, wrong password rejected, single-character tampering caught by the
+GCM tag, and a fresh salt+IV on every encryption.
+
+**Size ceiling, and it is low.** Base62 expands data ~1.34×, and AES-GCM adds 44
+bytes of header and tag. A 2 KB file becomes a **2,781-character URL** — already
+past the ~2,000 characters most servers and shorteners accept. Worse, link
+shorteners routinely drop everything after `#`, which is exactly where the
+ciphertext lives. `Encrypt to Link` warns when the URL crosses 2,000 characters.
+For anything but a short note, encrypt to a *file* and share a link to the file.
+
 Binary travels the text pipeline as a Latin-1 string (one code unit per byte)
 via `binStrFromBytes` / `bytesFromBinStr`. Verified on a 4096-byte adversarial
 payload including NULs and `0xFF`: the output equals Node's
