@@ -3,15 +3,46 @@
 Offline workbench for mining **BIP-39 mnemonics that scan as 5-7-5 haiku**, deriving
 their BIP-44 addresses, and moving data between tools through a **piped inbox**.
 
+The application now combines both repository lineages. The canonical main canvas is
+the complete uploaded **23 August Gen2 Webxdc/quine build**, with a surgical Poetry
+validator repair applied before it executes rather than replacement look-alike
+components. The small `⌘` switcher opens the maintained TypeScript recovery suite
+and every other distinct, non-empty HTML application from the gen-2 patch.
+
 ```bash
 npm install
 npm run dev     # http://localhost:5173
-npm test        # pipe inbox test suite
-npm run build   # single-file offline bundle -> dist/index.html
+npm test        # full test suite, including byte-identity locks for the uploads
+npm run build   # dist/index.html + dist/bip39-haiku-workbench.xdc
 ```
 
 The production build is inlined by `vite-plugin-singlefile`, so `dist/index.html`
-runs standalone from the filesystem with no server and no network.
+runs standalone from the filesystem. `scripts/build-xdc.mjs` then packages that
+same combined application, its icon, manifest, and static companion tools as a
+Webxdc ZIP for ArcaneChat / Delta Chat.
+
+## Combined codebases
+
+| Switcher entry | Source | Integration rule |
+| --- | --- | --- |
+| **Gen2 · Aug 23** (default) | `bip39-haiku-workbench-gen2-2026-08-23T11-46-10-756Z.html` | Full uploaded 12-tool canvas plus strict Poetry syllable repair |
+| **Gen2 · Aug 14** | `bip39-haiku-workbench-gen2-2026-08-14T20-01-22-058Z.html` | Exact earlier seven-tool generation |
+| **Quip build** | `bip39-haiku-workbench-quip.html` | Exact mnemonic explorer bundle |
+| **Classic wallet** | `bip39_haiku_wallet.html` | Exact standalone miner and encrypted wallet list |
+| **Pattern validator** | `haikubip39.html` | Exact classic haiku/repeated-word validator |
+| **Recovery suite** | `src/` | Maintained React/TypeScript tools described below |
+
+The applications run in same-origin `iframe srcdoc` boundaries because every upload
+is already a complete compiled document with its own React runtime, global CSS,
+`#root`, storage, and download handlers. This is deliberate isolation, not a visual
+port: `test/codebase-archive.test.tsx` pins the original SHA-256 of all five documents,
+and `test/poetry-validation.test.ts` signature-locks the two targeted Gen2 repairs.
+The old Poetry counter double-subtracted consonant-`le` endings, while its line builder
+could abandon a target after drawing a word that did not fit. The repair shares the
+validator pronunciation table, only selects words that fit the remainder, and accepts
+exact form counts—never a third line of 4 or 6 for 5-7-5. The second 23 August upload
+is omitted only because it has the same SHA-256 as the first; `bip39haiku.html` is
+omitted because it is zero bytes.
 
 ## Provenance
 

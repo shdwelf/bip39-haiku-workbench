@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { DEFAULT_SETTINGS, EnsoSettings, encodeEnsoId } from "./lib/enso";
 import EnsoForge from "./components/EnsoForge";
 import HaikuWallet from "./components/HaikuWallet";
@@ -14,6 +14,13 @@ import MarketData from "./components/MarketData";
 import { PipeProvider, usePipe } from "./pipe/PipeProvider";
 import PipeInboxPanel from "./pipe/PipeInboxPanel";
 import AppShell, { type NavItem } from "./shell/AppShell";
+import {
+  ARCHIVED_CODEBASES,
+  CodebaseSwitcher,
+  EmbeddedCodebase,
+  findArchivedCodebase,
+  type CodebaseId,
+} from "./components/CodebaseWorkbench";
 
 const NAV: NavItem[] = [
   { id: "enso", label: "Ensō Forge", icon: "⭕" },
@@ -72,10 +79,53 @@ function Workbench() {
   );
 }
 
+const CODEBASE_HASH_PREFIX = "codebase=";
+
+function codebaseFromHash(): CodebaseId {
+  if (typeof window === "undefined") return "gen2";
+  let value: string;
+  try {
+    value = decodeURIComponent(window.location.hash.slice(1));
+  } catch {
+    return "gen2";
+  }
+  if (!value.startsWith(CODEBASE_HASH_PREFIX)) return "gen2";
+  const id = value.slice(CODEBASE_HASH_PREFIX.length) as CodebaseId;
+  return id === "suite" || ARCHIVED_CODEBASES.some((codebase) => codebase.id === id) ? id : "gen2";
+}
+
+/**
+ * The 23 August Gen2 upload is the main canvas. The maintained TypeScript suite
+ * and every other distinct uploaded application remain one click away instead
+ * of being substituted with look-alike components.
+ */
 export default function App() {
+  const [codebaseId, setCodebaseId] = useState<CodebaseId>(codebaseFromHash);
+
+  useEffect(() => {
+    const onHashChange = () => setCodebaseId(codebaseFromHash());
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
+  }, []);
+
+  const selectCodebase = (id: CodebaseId) => {
+    setCodebaseId(id);
+    const nextHash = `${CODEBASE_HASH_PREFIX}${encodeURIComponent(id)}`;
+    if (window.location.hash.slice(1) !== nextHash) window.location.hash = nextHash;
+  };
+
+  const archived = findArchivedCodebase(codebaseId);
+
   return (
-    <PipeProvider initialTab="enso">
-      <Workbench />
-    </PipeProvider>
+    <>
+      {archived ? (
+        <EmbeddedCodebase codebase={archived} />
+      ) : (
+        <PipeProvider initialTab="enso">
+          <Workbench />
+        </PipeProvider>
+      )}
+      <CodebaseSwitcher activeId={codebaseId} onSelect={selectCodebase} />
+    </>
   );
 }
