@@ -4,10 +4,10 @@ Offline workbench for mining **BIP-39 mnemonics that scan as 5-7-5 haiku**, deri
 their BIP-44 addresses, and moving data between tools through a **piped inbox**.
 
 The application now combines both repository lineages. The canonical main canvas is
-the complete uploaded **23 August Gen2 Webxdc/quine build**, executed byte-for-byte
-rather than approximated with replacement components. The small `⌘` switcher opens
-the maintained TypeScript recovery suite and every other distinct, non-empty HTML
-application from the gen-2 patch.
+the complete uploaded **23 August Gen2 Webxdc/quine build**, with a surgical Poetry
+validator repair applied before it executes rather than replacement look-alike
+components. The small `⌘` switcher opens the maintained TypeScript recovery suite
+and every other distinct, non-empty HTML application from the gen-2 patch.
 
 ```bash
 npm install
@@ -25,7 +25,7 @@ Webxdc ZIP for ArcaneChat / Delta Chat.
 
 | Switcher entry | Source | Integration rule |
 | --- | --- | --- |
-| **Gen2 · Aug 23** (default) | `bip39-haiku-workbench-gen2-2026-08-23T11-46-10-756Z.html` | Exact uploaded HTML; full 12-tool canvas and Webxdc support |
+| **Gen2 · Aug 23** (default) | `bip39-haiku-workbench-gen2-2026-08-23T11-46-10-756Z.html` | Full uploaded 12-tool canvas plus strict Poetry syllable repair |
 | **Gen2 · Aug 14** | `bip39-haiku-workbench-gen2-2026-08-14T20-01-22-058Z.html` | Exact earlier seven-tool generation |
 | **Quip build** | `bip39-haiku-workbench-quip.html` | Exact mnemonic explorer bundle |
 | **Classic wallet** | `bip39_haiku_wallet.html` | Exact standalone miner and encrypted wallet list |
@@ -35,9 +35,14 @@ Webxdc ZIP for ArcaneChat / Delta Chat.
 The applications run in same-origin `iframe srcdoc` boundaries because every upload
 is already a complete compiled document with its own React runtime, global CSS,
 `#root`, storage, and download handlers. This is deliberate isolation, not a visual
-port: `test/codebase-archive.test.tsx` pins SHA-256 for all five documents. The
-second 23 August upload is omitted only because it has the same SHA-256 as the first;
-`bip39haiku.html` is omitted because it is zero bytes.
+port: `test/codebase-archive.test.tsx` pins the original SHA-256 of all five documents,
+and `test/poetry-validation.test.ts` signature-locks the two targeted Gen2 repairs.
+The old Poetry counter double-subtracted consonant-`le` endings, while its line builder
+could abandon a target after drawing a word that did not fit. The repair shares the
+validator pronunciation table, only selects words that fit the remainder, and accepts
+exact form counts—never a third line of 4 or 6 for 5-7-5. The second 23 August upload
+is omitted only because it has the same SHA-256 as the first; `bip39haiku.html` is
+omitted because it is zero bytes.
 
 ## Provenance
 

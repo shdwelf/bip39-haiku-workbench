@@ -30,7 +30,7 @@ describe("uploaded codebase archive", () => {
     ]);
 
     for (const codebase of ARCHIVED_CODEBASES) {
-      expect(sha256(codebase.html), codebase.filename).toBe(EXPECTED_SHA256[codebase.id]);
+      expect(sha256(codebase.originalHtml), codebase.filename).toBe(EXPECTED_SHA256[codebase.id]);
     }
   });
 

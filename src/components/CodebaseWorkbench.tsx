@@ -3,11 +3,13 @@ import { useMemo, useState } from "react";
 // These are the uploaded applications themselves, not React reimplementations.
 // Keeping them as raw documents lets each bundle retain its own CSS, storage,
 // workers, downloads, and duplicate element ids without leaking into a sibling.
+// The canonical Gen2 document receives one signature-guarded Poetry bug fix.
 import gen2August23 from "../../bip39-haiku-workbench-gen2-2026-08-23T11-46-10-756Z.html?raw";
 import gen2August14 from "../../bip39-haiku-workbench-gen2-2026-08-14T20-01-22-058Z.html?raw";
 import quipBuild from "../../bip39-haiku-workbench-quip.html?raw";
 import classicWallet from "../../bip39_haiku_wallet.html?raw";
 import patternValidator from "../../haikubip39.html?raw";
+import { patchGen2Poetry } from "../lib/poetryPatch";
 
 export type CodebaseId = "gen2" | "suite" | "gen2-aug14" | "quip" | "wallet-classic" | "validator-classic";
 
@@ -17,6 +19,9 @@ export interface ArchivedCodebase {
   shortLabel: string;
   description: string;
   filename: string;
+  /** Original uploaded document, retained for provenance and digest checks. */
+  originalHtml: string;
+  /** Runnable document; only Gen2 Aug 23 receives the targeted Poetry repair. */
   html: string;
 }
 
@@ -32,9 +37,10 @@ export const ARCHIVED_CODEBASES: readonly ArchivedCodebase[] = [
     id: "gen2",
     label: "Gen2 Workbench · 23 Aug 2026",
     shortLabel: "Gen2 · Aug 23",
-    description: "The complete 12-tool Webxdc/quine build — the canonical main experience.",
+    description: "The complete 12-tool Webxdc/quine build, with strict Poetry syllable validation.",
     filename: "bip39-haiku-workbench-gen2-2026-08-23T11-46-10-756Z.html",
-    html: gen2August23,
+    originalHtml: gen2August23,
+    html: patchGen2Poetry(gen2August23),
   },
   {
     id: "gen2-aug14",
@@ -42,6 +48,7 @@ export const ARCHIVED_CODEBASES: readonly ArchivedCodebase[] = [
     shortLabel: "Gen2 · Aug 14",
     description: "The earlier seven-tool generation, preserved without a visual rewrite.",
     filename: "bip39-haiku-workbench-gen2-2026-08-14T20-01-22-058Z.html",
+    originalHtml: gen2August14,
     html: gen2August14,
   },
   {
@@ -50,6 +57,7 @@ export const ARCHIVED_CODEBASES: readonly ArchivedCodebase[] = [
     shortLabel: "Quip build",
     description: "The uploaded mnemonic validator and derivation explorer bundle.",
     filename: "bip39-haiku-workbench-quip.html",
+    originalHtml: quipBuild,
     html: quipBuild,
   },
   {
@@ -58,6 +66,7 @@ export const ARCHIVED_CODEBASES: readonly ArchivedCodebase[] = [
     shortLabel: "Classic wallet",
     description: "The standalone miner, wallet list, and encrypted export application.",
     filename: "bip39_haiku_wallet.html",
+    originalHtml: classicWallet,
     html: classicWallet,
   },
   {
@@ -66,6 +75,7 @@ export const ARCHIVED_CODEBASES: readonly ArchivedCodebase[] = [
     shortLabel: "Pattern validator",
     description: "The original repeated-word and haiku checksum validator.",
     filename: "haikubip39.html",
+    originalHtml: patternValidator,
     html: patternValidator,
   },
 ] as const;
@@ -102,7 +112,7 @@ const WORKSPACES: readonly WorkspaceOption[] = [
     id: codebase.id,
     label: codebase.shortLabel,
     description: codebase.description,
-    provenance: "exact uploaded HTML",
+    provenance: codebase.id === "gen2" ? "upload + validator fix" : "exact uploaded HTML",
   })),
   {
     id: "suite",
@@ -197,7 +207,7 @@ export function CodebaseSwitcher({
                 onClick={() => downloadCodebase(activeArchive)}
                 className="mt-2 font-semibold text-cyan-300 hover:text-cyan-200"
               >
-                ↓ Save this original HTML
+                ↓ Save this {activeArchive.id === "gen2" ? "fixed" : "original"} HTML
               </button>
             )}
           </footer>
