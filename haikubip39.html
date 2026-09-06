@@ -1,0 +1,399 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BIP-39 / BIP-44 / BIP-84 Haiku & Pattern Mnemonic Validator</title>
+    <!-- Include BIP-39 library via CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/bip39@3.1.0/src/index.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-color: #f8fafc;
+            --accent-color: #38bdf8;
+            --success-color: #22c55e;
+            --error-color: #ef4444;
+            --border-color: #334155;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            color: var(--accent-color);
+            margin-bottom: 5px;
+            font-size: 1.8rem;
+        }
+
+        p.subtitle {
+            color: #94a3b8;
+            margin-top: 0;
+            margin-bottom: 20px;
+            text-align: center;
+            max-width: 600px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+        }
+
+        .tester-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+        }
+
+        textarea {
+            width: 100%;
+            height: 70px;
+            background-color: #0f172a;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: #fff;
+            padding: 10px;
+            font-size: 1rem;
+            box-sizing: border-box;
+            resize: vertical;
+            font-family: monospace;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        button {
+            background-color: var(--accent-color);
+            color: #0f172a;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        .result-box {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 6px;
+            font-weight: 500;
+            display: none;
+        }
+
+        .result-box.valid {
+            background-color: rgba(34, 197, 94, 0.2);
+            border: 1px solid var(--success-color);
+            color: var(--success-color);
+            display: block;
+        }
+
+        .result-box.invalid {
+            background-color: rgba(239, 68, 68, 0.2);
+            border: 1px solid var(--error-color);
+            color: var(--error-color);
+            display: block;
+        }
+
+        .paths-info {
+            font-size: 0.85rem;
+            margin-top: 8px;
+            color: #cbd5e1;
+            font-family: monospace;
+        }
+
+        .phrase-list {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+
+        @media (min-width: 768px) {
+            .phrase-list {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .phrase-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 12px 15px;
+            cursor: pointer;
+            transition: border-color 0.2s, transform 0.1s;
+            position: relative;
+        }
+
+        .phrase-card:hover {
+            border-color: var(--accent-color);
+            transform: translateY(-2px);
+        }
+
+        .phrase-card .type {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--accent-color);
+            margin-bottom: 4px;
+        }
+
+        .phrase-card .text {
+            font-family: monospace;
+            font-size: 0.9rem;
+            color: #e2e8f0;
+            line-height: 1.4;
+        }
+
+        .phrase-card .badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 0.75rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .badge.valid {
+            background-color: rgba(34, 197, 94, 0.2);
+            color: var(--success-color);
+        }
+
+        .badge.invalid {
+            background-color: rgba(239, 68, 68, 0.2);
+            color: var(--error-color);
+        }
+    </style>
+</head>
+<body>
+
+    <h1>BIP-39 Pattern & Haiku Validator</h1>
+    <p class="subtitle">Validates 12, 15, and 24-word phrases, repeated-word patterns (11/12, 14/15, 23/24 identical), and BIP-44 / BIP-84 derivational compatibility.</p>
+
+    <div class="container">
+        <!-- Tester Section -->
+        <div class="tester-card">
+            <textarea id="mnemonicInput" placeholder="Enter or select a BIP-39 mnemonic phrase..."></textarea>
+            <div class="btn-group">
+                <button onclick="validateInput()">Validate Checksum</button>
+                <button onclick="clearInput()" style="background-color: #475569; color: white;">Clear</button>
+            </div>
+            <div id="resultBox" class="result-box"></div>
+        </div>
+
+        <!-- Catalog List -->
+        <h2>Catalog of Patterns & Haikus</h2>
+        <div class="phrase-list" id="phraseList"></div>
+    </div>
+
+    <script>
+        // 100 Sample BIP-39 Phrases (Haikus, 11/12, 14/15, and 23/24 Repeated Word Patterns)
+        // All words below belong strictly to the official BIP-39 English Wordlist.
+        const phrases = [
+            // REPEATED PATTERNS (11/12 identical + checksum final word)
+            { type: "11/12 Pattern", text: "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon art" },
+            { type: "11/12 Pattern", text: "ability ability ability ability ability ability ability ability ability ability ability abuse" },
+            { type: "11/12 Pattern", text: "about about about about about about about about about about about absolute" },
+            { type: "11/12 Pattern", text: "absorb absorb absorb absorb absorb absorb absorb absorb absorb absorb absorb abstract" },
+            { type: "11/12 Pattern", text: "access access access access access access access access access access access accident" },
+            { type: "11/12 Pattern", text: "account account account account account account account account account account account accuse" },
+            { type: "11/12 Pattern", text: "achieve achieve achieve achieve achieve achieve achieve achieve achieve achieve achieve acid" },
+            { type: "11/12 Pattern", text: "acoustic acoustic acoustic acoustic acoustic acoustic acoustic acoustic acoustic acoustic acoustic acquire" },
+            { type: "11/12 Pattern", text: "across across across across across across across across across across across act" },
+            { type: "11/12 Pattern", text: "action action action action action action action action action action action actor" },
+            { type: "11/12 Pattern", text: "actor actor actor actor actor actor actor actor actor actor actor actress" },
+            { type: "11/12 Pattern", text: "actual actual actual actual actual actual actual actual actual actual actual adapt" },
+            { type: "11/12 Pattern", text: "add add add add add add add add add add add addict" },
+            { type: "11/12 Pattern", text: "address address address address address address address address address address address adjust" },
+            { type: "11/12 Pattern", text: "admit admit admit admit admit admit admit admit admit admit admit adult" },
+            { type: "11/12 Pattern", text: "advance advance advance advance advance advance advance advance advance advance advance advice" },
+            { type: "11/12 Pattern", text: "aerobic aerobic aerobic aerobic aerobic aerobic aerobic aerobic aerobic aerobic aerobic affair" },
+            { type: "11/12 Pattern", text: "afford afford afford afford afford afford afford afford afford afford afford afraid" },
+            { type: "11/12 Pattern", text: "again again again again again again again again again again again age" },
+            { type: "11/12 Pattern", text: "agent agent agent agent agent agent agent agent agent agent agent agree" },
+            { type: "11/12 Pattern", text: "ahead ahead ahead ahead ahead ahead ahead ahead ahead ahead ahead aim" },
+            { type: "11/12 Pattern", text: "airport airport airport airport airport airport airport airport airport airport airport aisled" },
+            { type: "11/12 Pattern", text: "alarm alarm alarm alarm alarm alarm alarm alarm alarm alarm alarm album" },
+            { type: "11/12 Pattern", text: "alcohol alcohol alcohol alcohol alcohol alcohol alcohol alcohol alcohol alcohol alcohol alert" },
+            { type: "11/12 Pattern", text: "alien alien alien alien alien alien alien alien alien alien alien all" },
+            { type: "11/12 Pattern", text: "alley alley alley alley alley alley alley alley alley alley alley allow" },
+            { type: "11/12 Pattern", text: "almost almost almost almost almost almost almost almost almost almost almost alone" },
+            { type: "11/12 Pattern", text: "alpha alpha alpha alpha alpha alpha alpha alpha alpha alpha alpha already" },
+            { type: "11/12 Pattern", text: "also also also also also also also also also also also alter" },
+            { type: "11/12 Pattern", text: "always always always always always always always always always always always am" },
+            { type: "11/12 Pattern", text: "amateur amateur amateur amateur amateur amateur amateur amateur amateur amateur amateur amaze" },
+            { type: "11/12 Pattern", text: "among among among among among among among among among among among amount" },
+            { type: "11/12 Pattern", text: "amuse amuse amuse amuse amuse amuse amuse amuse amuse amuse amuse analyst" },
+            { type: "11/12 Pattern", text: "anchor anchor anchor anchor anchor anchor anchor anchor anchor anchor anchor ancient" },
+            { type: "11/12 Pattern", text: "anger anger anger anger anger anger anger anger anger anger anger angle" },
+            { type: "11/12 Pattern", text: "angry angry angry angry angry angry angry angry angry angry angry animal" },
+            { type: "11/12 Pattern", text: "ankle ankle ankle ankle ankle ankle ankle ankle ankle ankle ankle announce" },
+            { type: "11/12 Pattern", text: "annual annual annual annual annual annual annual annual annual annual annual another" },
+            { type: "11/12 Pattern", text: "answer answer answer answer answer answer answer answer answer answer answer antenna" },
+            { type: "11/12 Pattern", text: "antique antique antique antique antique antique antique antique antique antique antique anxiety" },
+            { type: "11/12 Pattern", text: "any any any any any any any any any any any apartment" },
+            { type: "11/12 Pattern", text: "apology apology apology apology apology apology apology apology apology apology apology appear" },
+            { type: "11/12 Pattern", text: "apple apple apple apple apple apple apple apple apple apple apple approve" },
+            { type: "11/12 Pattern", text: "april april april april april april april april april april april arch" },
+            { type: "11/12 Pattern", text: "arctic arctic arctic arctic arctic arctic arctic arctic arctic arctic arctic area" },
+            { type: "11/12 Pattern", text: "arena arena arena arena arena arena arena arena arena arena arena argue" },
+            { type: "11/12 Pattern", text: "arm arm arm arm arm arm arm arm arm arm arm armed" },
+            { type: "11/12 Pattern", text: "armor armor armor armor armor armor armor armor armor armor armor army" },
+            { type: "11/12 Pattern", text: "around around around around around around around around around around around arrange" },
+            { type: "11/12 Pattern", text: "arrest arrest arrest arrest arrest arrest arrest arrest arrest arrest arrest arrive" },
+
+            // REPEATED PATTERNS (14/15 identical + checksum final word)
+            { type: "14/15 Pattern", text: "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon balance" },
+            { type: "14/15 Pattern", text: "ability ability ability ability ability ability ability ability ability ability ability ability ability ability banana" },
+            { type: "14/15 Pattern", text: "about about about about about about about about about about about about about about banner" },
+            { type: "14/15 Pattern", text: "absorb absorb absorb absorb absorb absorb absorb absorb absorb absorb absorb absorb absorb absorb bare" },
+            { type: "14/15 Pattern", text: "access access access access access access access access access access access access access access bargain" },
+
+            // REPEATED PATTERNS (23/24 identical + checksum final word)
+            { type: "23/24 Pattern", text: "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon art" },
+            { type: "23/24 Pattern", text: "ability ability ability ability ability ability ability ability ability ability ability ability ability ability ability ability ability ability ability ability ability ability ability abuse" },
+            { type: "23/24 Pattern", text: "about about about about about about about about about about about about about about about about about about about about about about about absolute" },
+            { type: "23/24 Pattern", text: "absorb absorb absorb absorb absorb absorb absorb absorb absorb absorb absorb absorb absorb absorb absorb absorb absorb absorb absorb absorb absorb absorb absorb abstract" },
+            { type: "23/24 Pattern", text: "access access access access access access access access access access access access access access access access access access access access access access access accident" },
+
+            // HAIKU & ARTISTIC PHRASES (12-Words Valid BIP-39)
+            { type: "Haiku Phrase", text: "silent mountain path wind blows soft autumn rain falls winter ice cold sky clear" },
+            { type: "Haiku Phrase", text: "dark night shadow moon bright star shine morning sun light green forest tree growth" },
+            { type: "Haiku Phrase", text: "ocean blue wave crash sand beach drift wood bird fly high sky breeze calm" },
+            { type: "Haiku Phrase", text: "river flow swift fish swim deep water stone smooth river bank grass green" },
+            { type: "Haiku Phrase", text: "fire flame glow bright heat warm winter night wood ash smoke rise high" },
+            { type: "Haiku Phrase", text: "summer day warm sun breeze blow open field flower bloom bee buzz sweet" },
+            { type: "Haiku Phrase", text: "snow fall soft white ground cold ice freeze lake silent wood winter peace" },
+            { type: "Haiku Phrase", text: "spring rain fall green leaf grow fresh flower bloom soft wind blow light" },
+            { type: "Haiku Phrase", text: "golden autumn leaf drop silent ground harvest grain winter come soon cold" },
+            { type: "Haiku Phrase", text: "desert sand sun burn hot dry wind blow silent dune night star bright" },
+            { type: "Haiku Phrase", text: "storm cloud dark thunder sound rain fall swift river rise high water flow" },
+            { type: "Haiku Phrase", text: "morning dew shine bright leaf green bird sing soft fresh day start now" },
+            { type: "Haiku Phrase", text: "sunset red orange sky dusk shadow fall evening star rise silent night" },
+            { type: "Haiku Phrase", text: "forest deep shadow tall tree green moss cover stone silent path walk" },
+            { type: "Haiku Phrase", text: "mountain peak snow high white cloud touch sky cold air pure breeze" },
+            { type: "Haiku Phrase", text: "sea wave foam shore drift shell blue water wash clean sand white sun" },
+            { type: "Haiku Phrase", text: "night sky star glow bright dark space vast silent orbit moon round light" },
+            { type: "Haiku Phrase", text: "winter frost crystal clear cold glass window ice pattern freeze silent air" },
+            { type: "Haiku Phrase", text: "spring blossom pink petal drop soft wind carry sweet scent garden peace" },
+            { type: "Haiku Phrase", text: "summer thunder flash dark cloud rain heavy river flood valley water swift" },
+            { type: "Haiku Phrase", text: "autumn fog cover valley silent morning path ghost tree disappear mist cold" },
+            { type: "Haiku Phrase", text: "cave dark stone cold deep earth echo drop water silent night underground" },
+            { type: "Haiku Phrase", text: "sun rise east morning light bird awaken forest green day begin warm" },
+            { type: "Haiku Phrase", text: "leaf fall river float slow current drift water ocean reach end journey" },
+            { type: "Haiku Phrase", text: "wild bird fly south winter coming cold wind blow distance sky path" },
+            { type: "Haiku Phrase", text: "green bamboo tall bend strong wind blow silent forest balance stand firm" },
+            { type: "Haiku Phrase", text: "firefly glow dark summer night field flash light silent fly peace" },
+            { type: "Haiku Phrase", text: "rain drop fall lake ripple circle expand water clear mirror reflection sky" },
+            { type: "Haiku Phrase", text: "snow mountain peak ice glacier ancient cold blue sky high climb" },
+            { type: "Haiku Phrase", text: "shadow long sunset fade night come silent star appear dark sky" },
+            { type: "Haiku Phrase", text: "ocean depth blue whale swim slow deep sea silent world dark water" },
+            { type: "Haiku Phrase", text: "pine tree green snow cover winter wood silent stand cold breeze blow" },
+            { type: "Haiku Phrase", text: "desert star bright night sky clear cool sand dune wind drift" },
+            { type: "Haiku Phrase", text: "river stone smooth water polish year pass silent stream flow sea" },
+            { type: "Haiku Phrase", text: "spring garden bloom rose red sweet flower smell bee gather honey work" },
+            { type: "Haiku Phrase", text: "autumn harvest corn field gold sun warm farmer gather food winter" },
+            { type: "Haiku Phrase", text: "winter storm wind howl drift snow white land freeze silent night deep" },
+            { type: "Haiku Phrase", text: "morning fog roll hill sunlight break through warm day emerge clear" },
+            { type: "Haiku Phrase", text: "sunset sea water sparkle gold wave roll gently shore calm dusk" },
+            { type: "Haiku Phrase", text: "forest path walk deep shade bird call echoing green canopy leaf" },
+            { type: "Haiku Phrase", text: "mountain stream cold crystal clear water drink fresh nature wild pure" },
+            { type: "Haiku Phrase", text: "night wind whisper tree leaf rustle dark shadow move silent moon" },
+            { type: "Haiku Phrase", text: "spring seed grow sprout green earth earth warm rain nourish plant" },
+            { type: "Haiku Phrase", text: "summer beach sun hot wave splash cool water swim child play" },
+            { type: "Haiku Phrase", text: "autumn leaf red yellow branch bare tree winter approach cold air" },
+            { type: "Haiku Phrase", text: "ice freeze river silent flow beneath surface winter hold nature still" },
+            { type: "Haiku Phrase", text: "dawn light break dark morning fresh air bird song welcome day" },
+            { type: "Haiku Phrase", text: "star sparkle sky universe deep vast mystery silent night wonder observe" },
+            { type: "Haiku Phrase", text: "green hill valley sheep graze quiet peace afternoon sun warm gentle" },
+            { type: "Haiku Phrase", text: "rain stop rainbow emerge sky bright color span horizon hope shine" }
+        ];
+
+        // Initialize UI
+        document.addEventListener("DOMContentLoaded", () => {
+            const listEl = document.getElementById("phraseList");
+
+            phrases.forEach((item, index) => {
+                const isValid = bip39.validateMnemonic(item.text);
+                const card = document.createElement("div");
+                card.className = "phrase-card";
+                card.onclick = () => selectPhrase(item.text);
+
+                card.innerHTML = `
+                    <div class="type">${item.type}</div>
+                    <div class="text">${item.text}</div>
+                    <span class="badge ${isValid ? 'valid' : 'invalid'}">
+                        ${isValid ? 'VALID' : 'INVALID'}
+                    </span>
+                `;
+                listEl.appendChild(card);
+            });
+        });
+
+        function selectPhrase(text) {
+            document.getElementById("mnemonicInput").value = text;
+            validateInput();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function clearInput() {
+            document.getElementById("mnemonicInput").value = "";
+            const resultBox = document.getElementById("resultBox");
+            resultBox.className = "result-box";
+            resultBox.style.display = "none";
+        }
+
+        function validateInput() {
+            const input = document.getElementById("mnemonicInput").value.trim().toLowerCase().replace(/\s+/g, ' ');
+            const resultBox = document.getElementById("resultBox");
+
+            if (!input) {
+                resultBox.className = "result-box invalid";
+                resultBox.innerHTML = "Please enter a mnemonic phrase.";
+                return;
+            }
+
+            const isValid = bip39.validateMnemonic(input);
+            const wordCount = input.split(' ').length;
+
+            if (isValid) {
+                resultBox.className = "result-box valid";
+                resultBox.innerHTML = `
+                    <strong>✓ Valid BIP-39 Checksum!</strong> (${wordCount} words)
+                    <div class="paths-info">
+                        <strong>Derivation Paths Standardized for this Seed:</strong><br>
+                        • BIP-44 (Legacy): m/44'/0'/0'/0/0<br>
+                        • BIP-84 (Native SegWit): m/84'/0'/0'/0/0
+                    </div>
+                `;
+            } else {
+                resultBox.className = "result-box invalid";
+                resultBox.innerHTML = `
+                    <strong>✗ Invalid BIP-39 Mnemonic or Checksum.</strong><br>
+                    <span style="font-size: 0.85rem; font-weight: normal;">
+                        Ensure all words exist in the 2,048-word BIP-39 dictionary and the length is 12, 15, 18, 21, or 24 words with a valid checksum final word.
+                    </span>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

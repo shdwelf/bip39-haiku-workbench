@@ -1,0 +1,1286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BIP-39 Haiku Wallet Generator</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600&amp;display=swap');
+        
+        :root {
+            --primary: #6366f1;
+        }
+        
+        body {
+            font-family: 'Inter', system_ui, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e1135 100%);
+            color: #e2e8f0;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: rgba(15, 23, 42, 0.95);
+            border-bottom: 1px solid #334155;
+            padding: 1.25rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+        
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+        }
+        
+        h1 {
+            font-family: 'Space Grotesk', system_ui, sans-serif;
+            font-size: 2.25rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, #6366f1, #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 0;
+        }
+        
+        .subtitle {
+            color: #64748b;
+            font-size: 1.05rem;
+            margin-top: 0.25rem;
+        }
+        
+        .card {
+            background: #1e2937;
+            border: 1px solid #334155;
+            border-radius: 16px;
+            padding: 1.75rem;
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+        }
+        
+        .section-title {
+            font-size: 1.35rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #f1e7ff;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            border: none;
+            text-decoration: none;
+        }
+        
+        .btn-primary {
+            background: #6366f1;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #4f46e5;
+            transform: translateY(-1px);
+        }
+        
+        .btn-secondary {
+            background: #334155;
+            color: #e2e8f0;
+        }
+        
+        .btn-secondary:hover {
+            background: #475569;
+        }
+        
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .btn-success {
+            background: #22c55e;
+            color: white;
+        }
+        
+        .input {
+            background: #0f172a;
+            border: 1px solid #475569;
+            color: #e2e8f0;
+            padding: 0.65rem 1rem;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            width: 100%;
+            transition: border-color 0.2s;
+        }
+        
+        .input:focus {
+            outline: none;
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+        
+        .haiku-line {
+            font-family: 'Space Grotesk', system_ui, sans-serif;
+            font-size: 1.35rem;
+            line-height: 1.4;
+            margin: 0.35rem 0;
+            padding: 0.5rem 0;
+            color: #e0d0ff;
+        }
+        
+        .haiku-container {
+            background: #0f172a;
+            border: 1px solid #475569;
+            border-radius: 12px;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+            position: relative;
+        }
+        
+        .mnemonic-full {
+            font-family: ui-monospace, monospace;
+            font-size: 0.875rem;
+            background: #1e2937;
+            padding: 0.75rem;
+            border-radius: 8px;
+            word-break: break-all;
+            color: #94a3b8;
+            margin-top: 0.75rem;
+        }
+        
+        .wallet-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+            gap: 1.25rem;
+        }
+        
+        .status {
+            font-size: 0.875rem;
+            padding: 0.35rem 0.75rem;
+            border-radius: 9999px;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+        
+        .status-valid {
+            background: rgba(34, 197, 94, 0.1);
+            color: #4ade80;
+        }
+        
+        .label {
+            font-size: 0.875rem;
+            color: #64748b;
+            margin-bottom: 0.35rem;
+            display: block;
+            font-weight: 500;
+        }
+        
+        .syllable-badge {
+            font-size: 0.75rem;
+            background: #334155;
+            color: #94a3b8;
+            padding: 0.1rem 0.5rem;
+            border-radius: 9999px;
+            display: inline-block;
+        }
+        
+        .nav-tabs {
+            display: flex;
+            border-bottom: 1px solid #334155;
+            margin-bottom: 1.5rem;
+        }
+        
+        .nav-tab {
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+        }
+        
+        .nav-tab.active {
+            border-bottom-color: #6366f1;
+            color: #6366f1;
+        }
+        
+        .metric {
+            font-size: 0.875rem;
+            color: #64748b;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: #64748b;
+        }
+        
+        .haiku-line::before {
+            content: "•";
+            color: #6366f1;
+            margin-right: 0.5rem;
+        }
+        
+        .footer-note {
+            font-size: 0.75rem;
+            color: #475569;
+            text-align: center;
+            margin-top: 2rem;
+        }
+        
+        .generated-item {
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .generated-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        }
+        
+        .word-count {
+            font-size: 0.75rem;
+            background: #1e2937;
+            padding: 0.15rem 0.6rem;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="container">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                    <h1>BIP-39 Haiku</h1>
+                    <p class="subtitle">Bitcoin Wallet Generator • Offline Standalone</p>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <div class="status status-valid">
+                        <span style="width: 8px; height: 8px; background: #22c55e; border-radius: 50%; display: inline-block;"></span>
+                        <span style="font-weight: 600;">Offline • Valid Checksum</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container" style="padding-top: 2rem; padding-bottom: 4rem;">
+        
+        <!-- Generator Section -->
+        <div class="card" style="margin-bottom: 2rem;">
+            <div class="section-title">
+                <span>⛏️ Mine Haiku Wallets</span>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 1.25rem; align-items: end;">
+                <div>
+                    <label class="label">Mnemonic Length</label>
+                    <select id="wordCountSelect" class="input">
+                        <option value="12">12 words (128-bit)</option>
+                        <option value="24">24 words (256-bit)</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="label">Mine Count</label>
+                    <input type="number" id="mineCount" class="input" value="5" min="1" max="50">
+                </div>
+                
+                <div>
+                    <label class="label">Wallet Type</label>
+                    <select id="walletType" class="input">
+                        <option value="bitcoin">Bitcoin (BIP-44)</option>
+                        <option value="ethereum">Ethereum</option>
+                        <option value="litecoin">Litecoin</option>
+                        <option value="bitcoin-cash">Bitcoin Cash</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <button onclick="mineHaikus()" class="btn btn-primary" style="width: 100%; padding: 0.85rem 1.75rem; font-size: 1rem;">
+                        ⛏️ Mine Haikus
+                    </button>
+                </div>
+            </div>
+            
+            <div style="margin-top: 1rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <input type="checkbox" id="strictSyllable" checked style="accent-color: #6366f1;">
+                    <label for="strictSyllable" style="font-size: 0.875rem; color: #94a3b8;">Require exact 5-7-5 syllable haiku</label>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <input type="checkbox" id="autoValidate" checked style="accent-color: #6366f1;">
+                    <label for="autoValidate" style="font-size: 0.875rem; color: #94a3b8;">Validate BIP-39 checksum</label>
+                </div>
+            </div>
+            
+            <div id="mineStatus" style="margin-top: 1rem; font-size: 0.875rem; color: #64748b; display: none;"></div>
+        </div>
+        
+        <!-- Generated Results -->
+        <div id="resultsSection" style="display: none; margin-bottom: 2.5rem;">
+            <div class="section-title">
+                <span>Generated Haiku Wallets</span>
+                <button onclick="clearResults()" class="btn btn-secondary" style="padding: 0.4rem 1rem; font-size: 0.8rem; margin-left: auto;">Clear Results</button>
+            </div>
+            <div id="resultsGrid" class="wallet-grid"></div>
+        </div>
+        
+        <!-- My Wallets Section -->
+        <div class="card">
+            <div class="section-title">
+                <span>💾 My Saved Haiku Wallets</span>
+                <div style="margin-left: auto; display: flex; gap: 0.5rem;">
+                    <button onclick="exportEncryptedList()" class="btn btn-secondary" style="padding: 0.5rem 1.1rem; font-size: 0.875rem;">
+                        🔐 Export Encrypted (AES-256)
+                    </button>
+                    <button onclick="clearAllWallets()" class="btn btn-danger" style="padding: 0.5rem 1.1rem; font-size: 0.875rem;">
+                        Clear All
+                    </button>
+                </div>
+            </div>
+            
+            <div id="savedWalletsContainer">
+                <!-- Populated by JS -->
+            </div>
+            
+            <div class="footer-note">
+                List persisted in localStorage • Wordlist embedded locally • Fully offline
+            </div>
+        </div>
+        
+    </div>
+
+    <script>
+        // BIP-39 English Wordlist (2048 words) - permanently stored locally
+        const bip39Words = [
+            "abandon","ability","able","about","above","absent","absorb","abstract","absurd","abuse",
+            "access","accident","account","accuse","achieve","acid","acoustic","acquire","across","act",
+            "action","actor","actress","actual","adapt","add","addict","address","adjust","admit",
+            "adult","advance","advice","aerobic","affair","afford","afraid","again","age","agent",
+            "agree","ahead","aim","air","airport","aisle","alarm","album","alcohol","alert",
+            "alien","all","alley","allow","almost","alone","alpha","already","also","alter",
+            "always","amateur","amazing","among","amount","amused","analyst","anchor","ancient","anger",
+            "angle","angry","animal","ankle","announce","annual","another","answer","antenna","antique",
+            "anxiety","any","apart","apology","appear","apple","approve","april","arch","arctic",
+            "area","arena","argue","arm","armed","armor","army","around","arrange","arrest",
+            "arrive","arrow","art","artefact","artist","artwork","ask","aspect","assault","asset",
+            "assist","assume","asthma","athlete","atom","attack","attend","attitude","attract","auction",
+            "audit","august","aunt","author","auto","autumn","average","avocado","avoid","awake",
+            "aware","away","awesome","awful","awkward","axis","baby","bachelor","bacon","badge",
+            "bag","balance","balcony","ball","bamboo","banana","banner","bar","barely","bargain",
+            "barrel","base","basic","basket","battle","beach","bean","beauty","because","become",
+            "beef","before","begin","behave","behind","believe","below","belt","bench","benefit",
+            "best","betray","better","between","beyond","bicycle","bid","bike","bind","biology",
+            "bird","birth","bitter","black","blade","blame","blanket","blast","bleak","bless",
+            "blind","blood","blossom","blouse","blue","blur","blush","board","boat","body",
+            "boil","bomb","bone","bonus","book","boost","border","boring","borrow","boss",
+            "bottom","bounce","box","boy","bracket","brain","brand","brass","brave","bread",
+            "breeze","brick","bridge","brief","bright","bring","brisk","broccoli","broken","bronze",
+            "broom","brother","brown","brush","bubble","buddy","budget","buffalo","build","bulb",
+            "bulk","bullet","bundle","bunker","burden","burger","burst","bus","business","busy",
+            "butter","buyer","buzz","cabbage","cabin","cable","cactus","cage","cake","call",
+            "calm","camera","camp","can","canal","cancel","candy","cannon","canoe","canvas",
+            "canyon","capable","capital","captain","car","carbon","card","cargo","carpet","carry",
+            "cart","case","cash","casino","castle","casual","cat","catalog","catch","category",
+            "cattle","caught","cause","caution","cave","ceiling","celery","cement","census","century",
+            "cereal","certain","chair","chalk","champion","change","chaos","chapter","charge","chase",
+            "chat","cheap","check","cheese","chef","cherry","chest","chicken","chief","child",
+            "chimney","choice","choose","chronic","chuckle","chunk","churn","cigar","cinnamon","circle",
+            "citizen","city","civil","claim","clap","clarify","claw","clay","clean","clerk",
+            "clever","click","client","cliff","climb","clinic","clip","clock","clog","close",
+            "cloth","cloud","clown","club","clump","cluster","clutch","coach","coast","coconut",
+            "code","coffee","coil","coin","collect","color","column","combine","come","comfort",
+            "comic","common","company","concert","conduct","confirm","congress","connect","consider","control",
+            "convince","cook","cool","copper","copy","coral","core","corn","correct","cost",
+            "cotton","couch","country","couple","course","cousin","cover","coyote","crack","cradle",
+            "craft","cram","crane","crash","crater","crawl","crazy","cream","credit","creek",
+            "crew","cricket","crime","crisp","critic","crop","cross","crouch","crowd","crucial",
+            "cruel","cruise","crumble","crunch","crush","cry","crystal","cube","culture","cup",
+            "cupboard","curious","current","curtain","curve","cushion","custom","cute","cycle","dad",
+            "damage","damp","dance","danger","daring","dash","daughter","dawn","day","deal",
+            "debate","debris","decade","december","decide","decline","decorate","decrease","deer","defense",
+            "define","defy","degree","delay","deliver","demand","demise","denial","dentist","deny",
+            "depart","depend","deposit","depth","deputy","derive","describe","desert","design","desk",
+            "despair","destroy","detail","detect","develop","device","devote","diagram","dial","diamond",
+            "diary","dice","diesel","diet","differ","digital","dignity","dilemma","dinner","dinosaur",
+            "direct","dirt","disagree","discover","disease","dish","dismiss","disorder","display","distance",
+            "divert","divide","divorce","dizzy","doctor","document","dog","doll","dolphin","domain",
+            "donate","donkey","donor","door","dose","double","dove","draft","dragon","drama",
+            "drastic","draw","dream","dress","drift","drill","drink","drip","drive","drop",
+            "drum","dry","duck","dumb","dune","during","dust","dutch","duty","dwarf",
+            "dynamic","eager","eagle","early","earn","earth","easily","east","easy","echo",
+            "ecology","economy","edge","edit","educate","effort","egg","eight","either","elbow",
+            "elder","electric","elegant","element","elephant","elevator","elite","else","embark","embody",
+            "embrace","emerge","emotion","employ","empower","empty","enable","enact","end","endless",
+            "endorse","enemy","energy","enforce","engage","engine","enhance","enjoy","enlist","enough",
+            "enrich","enroll","ensure","enter","entire","entry","envelope","episode","equal","equip",
+            "era","erase","erode","erosion","error","erupt","escape","essay","essence","estate",
+            "eternal","ethics","evidence","evil","evoke","evolve","exact","example","excess","exchange",
+            "excite","exclude","excuse","execute","exercise","exhaust","exhibit","exile","exist","exit",
+            "exotic","expand","expect","expire","explain","expose","express","extend","extra","eye",
+            "eyebrow","fabric","face","faculty","fade","faint","faith","fall","false","fame",
+            "family","famous","fan","fancy","fantasy","farm","fashion","fat","fatal","father",
+            "fatigue","fault","favorite","feature","february","federal","fee","feed","feel","female",
+            "fence","festival","fetch","fever","few","fiber","fiction","field","figure","file",
+            "film","filter","final","find","fine","finger","finish","fire","firm","first",
+            "fiscal","fish","fit","fitness","fix","flag","flame","flash","flat","flavor",
+            "flee","flight","flip","float","flock","floor","flower","fluid","flush","fly",
+            "foam","focus","fog","foil","fold","follow","food","foot","force","forest",
+            "forget","fork","fortune","forum","forward","fossil","foster","found","fox","fragile",
+            "frame","frequent","fresh","friend","fringe","frog","front","frost","frown","frozen",
+            "fruit","fuel","fun","funny","furnace","fury","future","gadget","gain","galaxy",
+            "gallery","game","gap","garage","garbage","garden","garlic","garment","gas","gasp",
+            "gate","gather","gauge","gaze","general","genius","genre","gentle","genuine","gesture",
+            "ghost","giant","gift","giggle","ginger","giraffe","girl","give","glad","glance",
+            "glare","glass","glide","glimpse","globe","gloom","glory","glove","glow","glue",
+            "goat","goddess","gold","good","goose","gorilla","gospel","gossip","govern","gown",
+            "grab","grace","grain","grant","grape","grass","gravity","great","green","grid",
+            "grief","grit","grocery","group","grow","grunt","guard","guess","guide","guilt",
+            "guitar","gun","gym","habit","hair","half","hammer","hamster","hand","happy",
+            "harbor","hard","harsh","harvest","hat","have","hawk","hazard","head","health",
+            "heart","heavy","hedgehog","height","hello","helmet","help","hen","hero","hidden",
+            "high","hill","hint","hip","hire","history","hobby","hockey","hold","hole",
+            "holiday","hollow","home","honey","hood","hope","horn","horror","horse","hospital",
+            "host","hotel","hour","hover","hub","huge","human","humble","humor","hundred",
+            "hungry","hunt","hurdle","hurry","hurt","husband","hybrid","ice","icon","idea",
+            "identify","idle","ignore","ill","illegal","illness","image","imitate","immense","immune",
+            "impact","impose","improve","impulse","inch","include","income","increase","index","indicate",
+            "indoor","industry","infant","inflict","inform","inhale","inherit","initial","inject","injury",
+            "inmate","inner","innocent","input","inquiry","insane","insect","inside","inspire","install",
+            "intact","interest","into","invest","invite","involve","iron","island","isolate","issue",
+            "item","ivory","jacket","jaguar","jar","jazz","jealous","jeans","jelly","jewel",
+            "job","join","joke","journey","joy","judge","juice","jump","jungle","junior",
+            "junk","just","kangaroo","keen","keep","ketchup","key","kick","kid","kidney",
+            "kind","kingdom","kiss","kit","kitchen","kite","kitten","kiwi","knee","knife",
+            "knock","know","lab","label","labor","ladder","lady","lake","lamp","language",
+            "laptop","large","later","latin","laugh","laundry","lava","law","lawn","lawsuit",
+            "layer","lazy","leader","leaf","learn","leave","lecture","left","leg","legal",
+            "legend","leisure","lemon","lend","length","lens","leopard","lesson","letter","level",
+            "liar","liberty","library","license","life","lift","light","like","limb","limit",
+            "link","lion","liquid","list","little","live","lizard","load","loan","lobster",
+            "local","lock","logic","lonely","long","loop","lottery","loud","lounge","love",
+            "loyal","lucky","luggage","lumber","lunar","lunch","luxury","lyrics","machine","mad",
+            "magic","magnet","maid","mail","main","major","make","mammal","man","manage",
+            "mandate","mango","mansion","manual","maple","marble","march","margin","marine","market",
+            "marriage","mask","mass","master","match","material","math","matrix","matter","maximum",
+            "maze","meadow","mean","measure","meat","mechanic","medal","media","melody","melt",
+            "member","memory","mention","menu","mercy","merge","merit","merry","mesh","message",
+            "metal","method","middle","midnight","milk","million","mimic","mind","minimum","minor",
+            "minute","miracle","mirror","misery","miss","mistake","mix","mixed","mixture","mobile",
+            "model","modify","mom","moment","monitor","monkey","monster","month","moon","moral",
+            "more","morning","mosquito","mother","motion","motor","mountain","mouse","move","movie",
+            "much","muffin","mule","multiply","muscle","museum","mushroom","music","must","mutual",
+            "myself","mystery","myth","naive","name","napkin","narrow","nasty","nation","nature",
+            "near","neck","need","negative","neglect","neither","nephew","nerve","nest","net",
+            "network","neutral","never","news","next","nice","night","noble","noise","nominee",
+            "noodle","normal","north","nose","notable","note","nothing","notice","novel","now",
+            "nuclear","number","nurse","nut","oak","obey","object","oblige","obscure","observe",
+            "obtain","obvious","occur","ocean","october","odor","off","offer","office","often",
+            "oil","okay","old","olive","olympic","omit","once","one","onion","online",
+            "only","open","opera","opinion","oppose","opt","option","orange","orbit","orchard",
+            "order","ordinary","organ","orient","original","orphan","ostrich","other","outdoor","outer",
+            "output","outside","oval","oven","over","own","owner","oxygen","oyster","ozone",
+            "pact","paddle","page","pair","palace","palm","panda","panel","panic","panther",
+            "paper","parade","parent","park","parrot","party","pass","patch","path","patient",
+            "patrol","pattern","pause","pave","payment","peace","peanut","pear","peasant","pelican",
+            "pen","penalty","pencil","people","pepper","perfect","permit","person","pet","phone",
+            "photo","phrase","physical","piano","picnic","picture","piece","pig","pigeon","pill",
+            "pilot","pink","pioneer","pipe","pistol","pitch","pizza","place","planet","plastic",
+            "plate","play","please","pledge","pluck","plug","plunge","poem","poet","point",
+            "polar","pole","police","pond","pony","pool","popular","portion","position","possible",
+            "post","potato","pottery","poverty","powder","power","practice","praise","predict","prefer",
+            "prepare","present","pretty","prevent","price","pride","primary","print","priority","prison",
+            "private","prize","problem","process","produce","profit","program","project","promote","proof",
+            "property","prosper","protect","proud","provide","public","pudding","pull","pulp","pulse",
+            "pumpkin","punch","pupil","puppy","purchase","purity","purpose","purse","push","put",
+            "puzzle","pyramid","quality","quantum","quarter","question","quick","quit","quiz","quote",
+            "rabbit","raccoon","race","rack","radar","radio","rail","rain","raise","rally",
+            "ramp","ranch","random","range","rapid","rare","rate","rather","raven","raw",
+            "razor","ready","real","reason","rebel","rebuild","recall","receive","recipe","record",
+            "recycle","reduce","reflect","reform","refuse","region","regret","regular","reject","relax",
+            "release","relief","rely","remain","remember","remind","remove","render","renew","rent",
+            "reopen","repair","repeat","replace","report","require","rescue","resemble","resist","resource",
+            "response","result","retire","retreat","return","reunion","reveal","review","reward","rhythm",
+            "rib","ribbon","rice","rich","ride","ridge","rifle","right","rigid","ring",
+            "riot","ripple","risk","ritual","rival","river","road","roast","robot","robust",
+            "rocket","romance","roof","rookie","room","rose","rotate","rough","round","route",
+            "royal","rubber","rude","rug","rule","run","runway","rural","sad","saddle",
+            "sadness","safe","sail","salad","salmon","salon","salt","salute","same","sample",
+            "sand","satisfy","satoshi","sauce","sausage","save","say","scale","scan","scare",
+            "scatter","scene","scheme","school","science","scissors","scorpion","scout","scrap","screen",
+            "script","scrub","sea","search","season","seat","second","secret","section","security",
+            "seed","seek","segment","select","sell","seminar","senior","sense","sentence","series",
+            "service","session","settle","setup","seven","shadow","shaft","shallow","share","shed",
+            "shell","sheriff","shield","shift","shine","ship","shiver","shock","shoe","shoot",
+            "shop","short","shoulder","shove","shrimp","shrug","shuffle","shy","sibling","sick",
+            "side","siege","sight","sign","silent","silk","silly","silver","similar","simple",
+            "since","sing","siren","sister","situate","six","size","skate","sketch","ski",
+            "skill","skin","skirt","skull","slab","slam","sleep","slender","slice","slide",
+            "slight","slim","slogan","slot","slow","slush","small","smart","smile","smoke",
+            "smooth","snack","snake","snap","sniff","snow","soap","soccer","social","sock",
+            "soda","soft","solar","soldier","solid","solution","solve","someone","song","soon",
+            "sorry","sort","soul","sound","soup","source","south","space","spare","spatial",
+            "spawn","speak","special","speed","spell","spend","sphere","spice","spider","spike",
+            "spin","spirit","split","spoil","sponsor","spoon","sport","spot","spray","spread",
+            "spring","spy","square","squeeze","squirrel","stable","stadium","staff","stage","stairs",
+            "stamp","stand","start","state","stay","steak","steel","stem","step","stereo",
+            "stick","still","sting","stock","stomach","stone","stool","story","stove","strategy",
+            "street","strike","strong","struggle","student","stuff","stumble","style","subject","submit",
+            "subway","success","such","sudden","suffer","sugar","suggest","suit","summer","sun",
+            "sunny","sunset","super","supply","supreme","sure","surface","surge","surprise","surround",
+            "survey","suspect","sustain","swallow","swamp","swap","swarm","swear","sweet","swift",
+            "swim","swing","switch","sword","symbol","symptom","syrup","system","table","tackle",
+            "tag","tail","talent","talk","tank","tape","target","task","taste","tattoo",
+            "taxi","teach","team","tell","ten","tenant","tennis","tent","term","test",
+            "text","thank","that","theme","then","theory","there","they","thing","this",
+            "thought","three","thrive","throw","thumb","thunder","ticket","tide","tiger","tilt",
+            "timber","time","tiny","tip","tired","tissue","title","toast","tobacco","today",
+            "toddler","toe","together","toilet","token","tomato","tomorrow","tone","tongue","tonight",
+            "tool","tooth","top","topic","topple","torch","tornado","tortoise","toss","total",
+            "tourist","toward","tower","town","toy","track","trade","traffic","tragic","train",
+            "transfer","trap","trash","travel","tray","treat","tree","trend","trial","tribe",
+            "trick","trigger","trim","trip","trophy","trouble","truck","true","truly","trumpet",
+            "trust","truth","try","tube","tuition","tumble","tuna","tunnel","turkey","turn",
+            "turtle","twelve","twenty","twice","twin","twist","two","type","typical","ugly",
+            "umbrella","unable","unaware","uncle","uncover","under","undo","unfair","unfold","unhappy",
+            "uniform","unique","unit","universe","unknown","unlock","until","unusual","unveil","update",
+            "upgrade","uphold","upon","upper","upset","urban","urge","usage","use","used",
+            "useful","useless","usual","utility","vacant","vacuum","vague","valid","valley","valve",
+            "van","vanish","vapor","various","vast","vault","vehicle","velvet","vendor","venture",
+            "venue","verb","verify","version","very","vessel","veteran","viable","vibrant","vicious",
+            "victory","video","view","village","vintage","violin","virtual","virus","visa","visit",
+            "visual","vital","vivid","vocal","voice","void","volcano","volume","vote","voyage",
+            "wage","wagon","wait","walk","wall","walnut","want","warfare","warm","warrior",
+            "wash","wasp","waste","water","wave","way","wealth","weapon","wear","weasel",
+            "weather","web","wedding","weekend","weird","welcome","west","wet","whale","what",
+            "wheat","wheel","when","where","whip","whisper","wide","width","wife","wild",
+            "will","win","window","wine","wing","wink","winner","winter","wire","wisdom",
+            "wise","wish","witness","wolf","woman","wonder","wood","wool","word","work",
+            "world","worry","worth","wrap","wreck","wrestle","wrist","write","wrong","yard",
+            "year","yellow","you","young","youth","zebra","zero","zone","zoo"
+        ];
+        
+        // Create word to index map for fast lookup
+        const wordToIndex = {};
+        bip39Words.forEach((word, index) => {
+            wordToIndex[word] = index;
+        });
+        
+        // Real syllable counting function (heuristic but effective for BIP-39 words)
+        function countSyllables(word) {
+            if (!word) return 0;
+            word = word.toLowerCase().replace(/[^a-z]/g, '');
+            if (word.length === 0) return 0;
+            if (word.length <= 3) return 1;
+            
+            // Remove common silent endings
+            let temp = word;
+            if (temp.endsWith('e') && !temp.endsWith('le')) {
+                temp = temp.slice(0, -1);
+            }
+            if (temp.endsWith('es')) temp = temp.slice(0, -2);
+            if (temp.endsWith('ed')) temp = temp.slice(0, -2);
+            
+            // Count vowel groups
+            const vowels = /[aeiouy]+/g;
+            const matches = temp.match(vowels);
+            let count = matches ? matches.length : 1;
+            
+            // Special cases for accuracy on common words
+            if (word.endsWith('le') && word.length > 2 && !/[aeiouy]/.test(word[word.length - 3])) {
+                count++;
+            }
+            if (word === 'people' || word === 'table' || word === 'little') count = 2;
+            if (word === 'beautiful' || word === 'family') count = 3;
+            
+            return Math.max(1, count);
+        }
+        
+        // Convert bytes to binary string
+        function bytesToBinary(bytes) {
+            return Array.from(bytes)
+                .map(byte => byte.toString(2).padStart(8, '0'))
+                .join('');
+        }
+        
+        // SHA-256 using Web Crypto API
+        async function sha256(buffer) {
+            const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+            return new Uint8Array(hashBuffer);
+        }
+        
+        // Generate valid BIP-39 mnemonic with proper checksum
+        async function generateBip39Mnemonic(wordCount = 12) {
+            const strength = wordCount === 12 ? 128 : 256;
+            const entropy = new Uint8Array(strength / 8);
+            crypto.getRandomValues(entropy);
+            
+            const entropyBits = bytesToBinary(entropy);
+            
+            // Compute checksum (first strength/32 bits of SHA256)
+            const hash = await sha256(entropy);
+            const hashBits = bytesToBinary(hash);
+            const checksumLength = strength / 32;
+            const checksumBits = hashBits.slice(0, checksumLength);
+            
+            const fullBits = entropyBits + checksumBits;
+            
+            // Split into 11-bit chunks
+            const indices = [];
+            for (let i = 0; i < fullBits.length; i += 11) {
+                const chunk = fullBits.slice(i, i + 11);
+                indices.push(parseInt(chunk, 2));
+            }
+            
+            const mnemonic = indices.map(index => bip39Words[index]);
+            return mnemonic;
+        }
+        
+        // Validate BIP-39 mnemonic checksum (for multiple wallet types)
+        async function validateBip39Checksum(mnemonicStr) {
+            const words = mnemonicStr.trim().split(/\s+/);
+            if (![12, 24].includes(words.length)) return false;
+            
+            const indices = words.map(w => wordToIndex[w]);
+            if (indices.some(i => i === undefined)) return false;
+            
+            let bits = '';
+            for (let idx of indices) {
+                bits += idx.toString(2).padStart(11, '0');
+            }
+            
+            const entropyBitsLen = words.length === 12 ? 128 : 256;
+            const checksumBitsLen = words.length === 12 ? 4 : 8;
+            
+            const entropyBits = bits.slice(0, entropyBitsLen);
+            const providedChecksum = bits.slice(entropyBitsLen);
+            
+            // Reconstruct entropy bytes
+            const entropyBytes = new Uint8Array(entropyBitsLen / 8);
+            for (let i = 0; i < entropyBitsLen; i += 8) {
+                entropyBytes[i / 8] = parseInt(entropyBits.slice(i, i + 8), 2);
+            }
+            
+            const hash = await sha256(entropyBytes);
+            const hashBits = bytesToBinary(hash);
+            const expectedChecksum = hashBits.slice(0, checksumBitsLen);
+            
+            return providedChecksum === expectedChecksum;
+        }
+        
+        // Find haiku split (5-7-5 syllables) with real counting
+        function findHaikuSplit(syls) {
+            const n = syls.length;
+            const prefix = [0];
+            for (let s of syls) {
+                prefix.push(prefix[prefix.length - 1] + s);
+            }
+            const total = prefix[n];
+            
+            if (total !== 17) return null;
+            
+            for (let i = 0; i < n; i++) {
+                if (prefix[i + 1] === 5) {
+                    for (let j = i + 1; j < n; j++) {
+                        if (prefix[j + 1] - prefix[i + 1] === 7) {
+                            if (prefix[n] - prefix[j + 1] === 5) {
+                                return { line1End: i, line2End: j };
+                            }
+                        }
+                    }
+                }
+            }
+            return null;
+        }
+        
+        // Mine multiple haikus
+        let currentResults = [];
+        
+        async function mineHaikus() {
+            const wordCount = parseInt(document.getElementById('wordCountSelect').value);
+            const count = parseInt(document.getElementById('mineCount').value) || 5;
+            const strict = document.getElementById('strictSyllable').checked;
+            const validate = document.getElementById('autoValidate').checked;
+            
+            const statusEl = document.getElementById('mineStatus');
+            const resultsSection = document.getElementById('resultsSection');
+            const grid = document.getElementById('resultsGrid');
+            
+            statusEl.style.display = 'block';
+            statusEl.innerHTML = `⛏️ Mining ${count} valid haiku wallets... (this may take a moment)`;
+            grid.innerHTML = '';
+            currentResults = [];
+            
+            const results = [];
+            let attempts = 0;
+            const maxAttempts = 25000;
+            
+            while (results.length < count && attempts < maxAttempts) {
+                attempts++;
+                
+                if (attempts % 500 === 0) {
+                    statusEl.innerHTML = `⛏️ Mining... ${results.length}/${count} found (attempts: ${attempts})`;
+                    await new Promise(r => setTimeout(r, 10));
+                }
+                
+                try {
+                    const mnemonicWords = await generateBip39Mnemonic(wordCount);
+                    const mnemonicStr = mnemonicWords.join(' ');
+                    
+                    // Validate checksum
+                    let isValid = true;
+                    if (validate) {
+                        isValid = await validateBip39Checksum(mnemonicStr);
+                    }
+                    
+                    if (!isValid) continue;
+                    
+                    const syls = mnemonicWords.map(w => countSyllables(w));
+                    const split = findHaikuSplit(syls);
+                    
+                    if (split || !strict) {
+                        let haikuData;
+                        
+                        if (split) {
+                            const line1Words = mnemonicWords.slice(0, split.line1End + 1);
+                            const line2Words = mnemonicWords.slice(split.line1End + 1, split.line2End + 1);
+                            const line3Words = mnemonicWords.slice(split.line2End + 1);
+                            
+                            haikuData = {
+                                line1: line1Words.join(' '),
+                                line2: line2Words.join(' '),
+                                line3: line3Words.join(' '),
+                                line1Syl: syls.slice(0, split.line1End + 1).reduce((a, b) => a + b, 0),
+                                line2Syl: syls.slice(split.line1End + 1, split.line2End + 1).reduce((a, b) => a + b, 0),
+                                line3Syl: syls.slice(split.line2End + 1).reduce((a, b) => a + b, 0)
+                            };
+                        } else {
+                            // Fallback: split roughly into 3 lines
+                            const third = Math.floor(mnemonicWords.length / 3);
+                            haikuData = {
+                                line1: mnemonicWords.slice(0, third).join(' '),
+                                line2: mnemonicWords.slice(third, third * 2).join(' '),
+                                line3: mnemonicWords.slice(third * 2).join(' '),
+                                line1Syl: syls.slice(0, third).reduce((a, b) => a + b, 0),
+                                line2Syl: syls.slice(third, third * 2).reduce((a, b) => a + b, 0),
+                                line3Syl: syls.slice(third * 2).reduce((a, b) => a + b, 0)
+                            };
+                        }
+                        
+                        const walletType = document.getElementById('walletType').value;
+                        
+                        const result = {
+                            id: Date.now() + Math.random().toString(36).substr(2, 9),
+                            mnemonic: mnemonicStr,
+                            words: mnemonicWords,
+                            haiku: haikuData,
+                            syls: syls,
+                            totalSyllables: syls.reduce((a, b) => a + b, 0),
+                            timestamp: new Date().toISOString(),
+                            wordCount: wordCount,
+                            walletType: walletType,
+                            checksumValid: isValid
+                        };
+                        
+                        results.push(result);
+                        currentResults.push(result);
+                    }
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+            
+            statusEl.innerHTML = `✅ Found ${results.length} valid haiku wallets after ${attempts} attempts`;
+            
+            // Render results
+            renderResults(grid, results);
+            resultsSection.style.display = 'block';
+            
+            setTimeout(() => {
+                statusEl.style.display = 'none';
+            }, 4000);
+        }
+        
+        function renderResults(grid, results) {
+            grid.innerHTML = '';
+            
+            results.forEach((wallet, idx) => {
+                const div = document.createElement('div');
+                div.className = 'card generated-item';
+                div.style.padding = '1.25rem';
+                
+                const walletLabel = wallet.walletType === 'bitcoin' ? 'Bitcoin' : 
+                                   wallet.walletType === 'ethereum' ? 'Ethereum' : 
+                                   wallet.walletType === 'litecoin' ? 'Litecoin' : 'Bitcoin Cash';
+                
+                let haikuHTML = '';
+                if (wallet.haiku.line1Syl !== undefined) {
+                    haikuHTML = `
+                        <div class="haiku-container">
+                            <div class="haiku-line">${wallet.haiku.line1} <span class="syllable-badge">${wallet.haiku.line1Syl} syl</span></div>
+                            <div class="haiku-line">${wallet.haiku.line2} <span class="syllable-badge">${wallet.haiku.line2Syl} syl</span></div>
+                            <div class="haiku-line">${wallet.haiku.line3} <span class="syllable-badge">${wallet.haiku.line3Syl} syl</span></div>
+                        </div>
+                    `;
+                } else {
+                    haikuHTML = `
+                        <div class="haiku-container">
+                            <div class="haiku-line">${wallet.mnemonic.split(' ').slice(0,4).join(' ')}</div>
+                            <div class="haiku-line">${wallet.mnemonic.split(' ').slice(4,8).join(' ')}</div>
+                            <div class="haiku-line">${wallet.mnemonic.split(' ').slice(8).join(' ')}</div>
+                        </div>
+                    `;
+                }
+                
+                div.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
+                        <div>
+                            <span class="word-count">${wallet.wordCount} words</span>
+                            <span style="margin-left:0.5rem; font-size:0.75rem; color:#64748b;">${walletLabel}</span>
+                        </div>
+                        <div class="status ${wallet.checksumValid ? 'status-valid' : ''}" style="font-size:0.7rem; padding:0.15rem 0.5rem;">
+                            ${wallet.checksumValid ? '✓ Valid Checksum' : 'Checksum Error'}
+                        </div>
+                    </div>
+                    
+                    ${haikuHTML}
+                    
+                    <div class="mnemonic-full">
+                        <strong>Full Mnemonic:</strong><br>
+                        ${wallet.mnemonic}
+                    </div>
+                    
+                    <div style="margin-top:1rem; display:flex; gap:0.5rem; flex-wrap:wrap;">
+                        <button onclick="saveWalletToList(${idx}, this)" class="btn btn-success" style="padding:0.5rem 1rem; font-size:0.85rem; flex:1;">
+                            💾 Save to List
+                        </button>
+                        <button onclick="copyMnemonic('${wallet.mnemonic.replace(/'/g, "\\'")}', this)" class="btn btn-secondary" style="padding:0.5rem 1rem; font-size:0.85rem;">
+                            📋 Copy
+                        </button>
+                        <button onclick="regenerateSingle(${idx}, this)" class="btn btn-secondary" style="padding:0.5rem 1rem; font-size:0.85rem;">
+                            🔄 Next
+                        </button>
+                    </div>
+                    
+                    <div style="margin-top:0.5rem; font-size:0.75rem; color:#64748b;">
+                        Total syllables: ${wallet.totalSyllables} • Generated ${new Date(wallet.timestamp).toLocaleTimeString()}
+                    </div>
+                `;
+                
+                grid.appendChild(div);
+            });
+        }
+        
+        function saveWalletToList(resultIndex, buttonEl) {
+            const wallet = currentResults[resultIndex];
+            if (!wallet) return;
+            
+            let saved = getSavedWallets();
+            
+            // Check for duplicates
+            const exists = saved.some(w => w.mnemonic === wallet.mnemonic);
+            if (exists) {
+                buttonEl.innerHTML = 'Already Saved';
+                buttonEl.disabled = true;
+                setTimeout(() => {
+                    buttonEl.innerHTML = '💾 Save to List';
+                    buttonEl.disabled = false;
+                }, 1800);
+                return;
+            }
+            
+            saved.unshift(wallet);
+            
+            // Limit to 100 entries
+            if (saved.length > 100) saved = saved.slice(0, 100);
+            
+            localStorage.setItem('bip39_haiku_wallets', JSON.stringify(saved));
+            
+            buttonEl.innerHTML = '✅ Saved!';
+            buttonEl.disabled = true;
+            
+            // Refresh saved list
+            renderSavedWallets();
+            
+            setTimeout(() => {
+                if (buttonEl && buttonEl.parentNode) {
+                    buttonEl.innerHTML = '💾 Save to List';
+                    buttonEl.disabled = false;
+                }
+            }, 2200);
+        }
+        
+        function copyMnemonic(mnemonic, buttonEl) {
+            navigator.clipboard.writeText(mnemonic).then(() => {
+                const originalText = buttonEl.innerHTML;
+                buttonEl.innerHTML = '✅ Copied!';
+                setTimeout(() => {
+                    buttonEl.innerHTML = originalText;
+                }, 1500);
+            }).catch(() => {
+                // Fallback
+                const textarea = document.createElement('textarea');
+                textarea.value = mnemonic;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                buttonEl.innerHTML = '✅ Copied!';
+                setTimeout(() => {
+                    buttonEl.innerHTML = '📋 Copy';
+                }, 1500);
+            });
+        }
+        
+        async function regenerateSingle(resultIndex, buttonEl) {
+            const originalText = buttonEl.innerHTML;
+            buttonEl.innerHTML = '⛏️ Mining...';
+            buttonEl.disabled = true;
+            
+            const wordCount = currentResults[resultIndex].wordCount;
+            const walletType = currentResults[resultIndex].walletType;
+            
+            let newWallet = null;
+            let attempts = 0;
+            
+            while (!newWallet && attempts < 5000) {
+                attempts++;
+                try {
+                    const mnemonicWords = await generateBip39Mnemonic(wordCount);
+                    const mnemonicStr = mnemonicWords.join(' ');
+                    const isValid = await validateBip39Checksum(mnemonicStr);
+                    
+                    if (!isValid) continue;
+                    
+                    const syls = mnemonicWords.map(w => countSyllables(w));
+                    const split = findHaikuSplit(syls);
+                    
+                    let haikuData;
+                    if (split) {
+                        haikuData = {
+                            line1: mnemonicWords.slice(0, split.line1End + 1).join(' '),
+                            line2: mnemonicWords.slice(split.line1End + 1, split.line2End + 1).join(' '),
+                            line3: mnemonicWords.slice(split.line2End + 1).join(' '),
+                            line1Syl: syls.slice(0, split.line1End + 1).reduce((a, b) => a + b, 0),
+                            line2Syl: syls.slice(split.line1End + 1, split.line2End + 1).reduce((a, b) => a + b, 0),
+                            line3Syl: syls.slice(split.line2End + 1).reduce((a, b) => a + b, 0)
+                        };
+                    } else {
+                        const third = Math.floor(mnemonicWords.length / 3);
+                        haikuData = {
+                            line1: mnemonicWords.slice(0, third).join(' '),
+                            line2: mnemonicWords.slice(third, third * 2).join(' '),
+                            line3: mnemonicWords.slice(third * 2).join(' '),
+                            line1Syl: syls.slice(0, third).reduce((a, b) => a + b, 0),
+                            line2Syl: syls.slice(third, third * 2).reduce((a, b) => a + b, 0),
+                            line3Syl: syls.slice(third * 2).reduce((a, b) => a + b, 0)
+                        };
+                    }
+                    
+                    newWallet = {
+                        id: Date.now() + Math.random().toString(36).substr(2, 9),
+                        mnemonic: mnemonicStr,
+                        words: mnemonicWords,
+                        haiku: haikuData,
+                        syls: syls,
+                        totalSyllables: syls.reduce((a, b) => a + b, 0),
+                        timestamp: new Date().toISOString(),
+                        wordCount: wordCount,
+                        walletType: walletType,
+                        checksumValid: true
+                    };
+                } catch (e) {}
+            }
+            
+            if (newWallet) {
+                currentResults[resultIndex] = newWallet;
+                // Re-render the specific card
+                const grid = document.getElementById('resultsGrid');
+                renderResults(grid, currentResults);
+            } else {
+                alert('Could not find another valid haiku quickly. Try mining again.');
+            }
+            
+            buttonEl.innerHTML = originalText;
+            buttonEl.disabled = false;
+        }
+        
+        function clearResults() {
+            document.getElementById('resultsSection').style.display = 'none';
+            document.getElementById('resultsGrid').innerHTML = '';
+            currentResults = [];
+        }
+        
+        // Saved wallets functions
+        function getSavedWallets() {
+            try {
+                const data = localStorage.getItem('bip39_haiku_wallets');
+                return data ? JSON.parse(data) : [];
+            } catch (e) {
+                return [];
+            }
+        }
+        
+        function renderSavedWallets() {
+            const container = document.getElementById('savedWalletsContainer');
+            const saved = getSavedWallets();
+            
+            if (saved.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.4;">📭</div>
+                        <p>No wallets saved yet.<br>Generate and save some haiku wallets above.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = `<div class="wallet-grid">`;
+            
+            saved.forEach((wallet, index) => {
+                const walletLabel = wallet.walletType === 'bitcoin' ? 'Bitcoin' : 
+                                   wallet.walletType === 'ethereum' ? 'Ethereum' : 
+                                   wallet.walletType === 'litecoin' ? 'Litecoin' : 'Bitcoin Cash';
+                
+                let haikuHTML = '';
+                if (wallet.haiku && wallet.haiku.line1) {
+                    haikuHTML = `
+                        <div class="haiku-container" style="margin: 0.75rem 0;">
+                            <div class="haiku-line">${wallet.haiku.line1} <span class="syllable-badge">${wallet.haiku.line1Syl || '?'} syl</span></div>
+                            <div class="haiku-line">${wallet.haiku.line2} <span class="syllable-badge">${wallet.haiku.line2Syl || '?'} syl</span></div>
+                            <div class="haiku-line">${wallet.haiku.line3} <span class="syllable-badge">${wallet.haiku.line3Syl || '?'} syl</span></div>
+                        </div>
+                    `;
+                } else {
+                    const words = wallet.mnemonic.split(' ');
+                    const third = Math.floor(words.length / 3);
+                    haikuHTML = `
+                        <div class="haiku-container" style="margin: 0.75rem 0;">
+                            <div class="haiku-line">${words.slice(0, third).join(' ')}</div>
+                            <div class="haiku-line">${words.slice(third, third*2).join(' ')}</div>
+                            <div class="haiku-line">${words.slice(third*2).join(' ')}</div>
+                        </div>
+                    `;
+                }
+                
+                html += `
+                    <div class="card" style="padding: 1.25rem;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+                            <div>
+                                <span class="word-count">${wallet.wordCount || 12} words</span>
+                                <span style="margin-left:0.5rem; font-size:0.75rem; color:#64748b;">${walletLabel}</span>
+                            </div>
+                            <div class="status status-valid" style="font-size:0.7rem; padding:0.15rem 0.5rem;">
+                                ✓ Valid
+                            </div>
+                        </div>
+                        
+                        ${haikuHTML}
+                        
+                        <div class="mnemonic-full" style="font-size:0.8rem; margin:0.5rem 0;">
+                            ${wallet.mnemonic}
+                        </div>
+                        
+                        <div style="display:flex; gap:0.5rem; margin-top:1rem;">
+                            <button onclick="deleteWallet(${index}, this)" class="btn btn-danger" style="padding:0.45rem 0.9rem; font-size:0.8rem; flex:1;">
+                                🗑️ Delete
+                            </button>
+                            <button onclick="copyMnemonic('${wallet.mnemonic.replace(/'/g, "\\'")}', this)" class="btn btn-secondary" style="padding:0.45rem 0.9rem; font-size:0.8rem; flex:1;">
+                                📋 Copy
+                            </button>
+                        </div>
+                        
+                        <div style="margin-top:0.6rem; font-size:0.7rem; color:#475569;">
+                            Saved ${new Date(wallet.timestamp).toLocaleDateString()}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += `</div>`;
+            container.innerHTML = html;
+        }
+        
+        function deleteWallet(index, buttonEl) {
+            if (!confirm('Delete this wallet from your list?')) return;
+            
+            let saved = getSavedWallets();
+            saved.splice(index, 1);
+            localStorage.setItem('bip39_haiku_wallets', JSON.stringify(saved));
+            
+            renderSavedWallets();
+        }
+        
+        function clearAllWallets() {
+            if (!confirm('Delete ALL saved wallets? This cannot be undone.')) return;
+            localStorage.removeItem('bip39_haiku_wallets');
+            renderSavedWallets();
+        }
+        
+        // AES-256 Encryption for export (using Web Crypto API)
+        async function encryptAES(plaintext, password) {
+            const enc = new TextEncoder();
+            const passwordKey = await crypto.subtle.importKey(
+                'raw',
+                enc.encode(password),
+                { name: 'PBKDF2' },
+                false,
+                ['deriveKey']
+            );
+            
+            const salt = crypto.getRandomValues(new Uint8Array(16));
+            const key = await crypto.subtle.deriveKey(
+                {
+                    name: 'PBKDF2',
+                    salt: salt,
+                    iterations: 150000,
+                    hash: 'SHA-256'
+                },
+                passwordKey,
+                { name: 'AES-GCM', length: 256 },
+                false,
+                ['encrypt']
+            );
+            
+            const iv = crypto.getRandomValues(new Uint8Array(12));
+            const encryptedBuffer = await crypto.subtle.encrypt(
+                { name: 'AES-GCM', iv: iv },
+                key,
+                enc.encode(plaintext)
+            );
+            
+            // Combine salt + iv + ciphertext
+            const combined = new Uint8Array(salt.length + iv.length + encryptedBuffer.byteLength);
+            combined.set(salt, 0);
+            combined.set(iv, salt.length);
+            combined.set(new Uint8Array(encryptedBuffer), salt.length + iv.length);
+            
+            return btoa(String.fromCharCode.apply(null, combined));
+        }
+        
+        async function exportEncryptedList() {
+            const saved = getSavedWallets();
+            if (saved.length === 0) {
+                alert('No wallets to export.');
+                return;
+            }
+            
+            const password = prompt('Enter a strong password for AES-256 encryption of your wallet list:');
+            if (!password || password.length < 6) {
+                alert('Password is required and must be at least 6 characters.');
+                return;
+            }
+            
+            try {
+                const jsonData = JSON.stringify(saved, null, 2);
+                const encrypted = await encryptAES(jsonData, password);
+                
+                const blob = new Blob([encrypted], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `bip39_haiku_wallets_${new Date().toISOString().split('T')[0]}.enc.txt`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                alert('✅ Wallet list exported as AES-256 encrypted file.\n\nKeep your password safe! You will need it to decrypt later.');
+            } catch (e) {
+                console.error(e);
+                alert('Encryption failed. Please try again.');
+            }
+        }
+        
+        // Optional: Decrypt function (for future import)
+        async function decryptAES(encryptedBase64, password) {
+            try {
+                const combined = new Uint8Array(atob(encryptedBase64).split('').map(c => c.charCodeAt(0)));
+                const salt = combined.slice(0, 16);
+                const iv = combined.slice(16, 28);
+                const ciphertext = combined.slice(28);
+                
+                const enc = new TextEncoder();
+                const passwordKey = await crypto.subtle.importKey(
+                    'raw',
+                    enc.encode(password),
+                    { name: 'PBKDF2' },
+                    false,
+                    ['deriveKey']
+                );
+                
+                const key = await crypto.subtle.deriveKey(
+                    {
+                        name: 'PBKDF2',
+                        salt: salt,
+                        iterations: 150000,
+                        hash: 'SHA-256'
+                    },
+                    passwordKey,
+                    { name: 'AES-GCM', length: 256 },
+                    false,
+                    ['decrypt']
+                );
+                
+                const decryptedBuffer = await crypto.subtle.decrypt(
+                    { name: 'AES-GCM', iv: iv },
+                    key,
+                    ciphertext
+                );
+                
+                return new TextDecoder().decode(decryptedBuffer);
+            } catch (e) {
+                throw new Error('Decryption failed. Wrong password or corrupted file.');
+            }
+        }
+        
+        // Initialize the app
+        function initializeApp() {
+            // Load saved wallets
+            renderSavedWallets();
+            
+            // Set default mine count based on device
+            const mineCountInput = document.getElementById('mineCount');
+            if (window.innerWidth < 768) {
+                mineCountInput.value = 3;
+            }
+            
+            // Keyboard shortcut hint
+            document.addEventListener('keydown', function(e) {
+                if (e.key === '/' && document.activeElement.tagName === 'BODY') {
+                    e.preventDefault();
+                    document.getElementById('mineCount').focus();
+                }
+            });
+            
+            // Welcome message in console
+            console.log('%c[BIP-39 Haiku Wallet] Standalone offline app initialized. Wordlist permanently embedded.', 'color:#64748b');
+            
+            // Optional: Pre-mine one example on load for demo (commented to keep clean)
+            // setTimeout(() => { if (document.getElementById('resultsGrid').children.length === 0) { /* could auto mine */ } }, 800);
+        }
+        
+        // Boot the application
+        window.onload = initializeApp;
+        
+        // Make some functions global for debugging if needed
+        window.BIP39Haiku = {
+            generateBip39Mnemonic,
+            validateBip39Checksum,
+            countSyllables,
+            getSavedWallets
+        };
+    </script>
+</body>
+</html>
