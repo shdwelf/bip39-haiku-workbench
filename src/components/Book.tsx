@@ -10,6 +10,7 @@ import { usePersistentState } from "../shell/hooks";
 import Collapsible from "../shell/Collapsible";
 import { PipeOutButton } from "../pipe/PipeButtons";
 import { usePipeReceiver } from "../pipe/PipeProvider";
+import { haikuChapterBody, parseHaikuText } from "../lib/haikuImport";
 import {
   canServe,
   FS_ROOT,
@@ -74,6 +75,8 @@ export default function Book() {
   const [preview, setPreview] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
   const vaultInput = useRef<HTMLInputElement>(null);
+  const haikuInput = useRef<HTMLInputElement>(null);
+  const scanInput = useRef<HTMLInputElement>(null);
   const [serving, setServing] = useState(false);
   const bodyRef = useRef<HTMLTextAreaElement>(null);
 
@@ -184,6 +187,64 @@ export default function Book() {
       setBusy((e as Error).message);
     }
     window.setTimeout(() => setBusy(null), 6000);
+  };
+
+  const onImportHaiku = async (list: FileList | null) => {
+    if (!list?.length) return;
+    setBusy(`Importing ${list.length} haiku journal file${list.length === 1 ? "" : "s"}…`);
+    const imported: Chapter[] = [];
+    let skipped = 0;
+    for (const file of Array.from(list)) {
+      const haiku = parseHaikuText(await file.text(), file.name);
+      if (!haiku || files.some((entry) => entry.dir === "/journal/haiku" && entry.name === file.name)) {
+        skipped++;
+        continue;
+      }
+      // Keep the original source in the journal, while the chapter stays easy
+      // to edit and can be piped to Inspector or another workbench tool.
+      await vfs.add(file, {
+        dir: "/journal/haiku",
+        caption: `Imported haiku journal entry: ${haiku.title}`,
+      });
+      const body = haikuChapterBody(haiku, file.name);
+      if (!chapters.some((c) => c.title === haiku.title && c.body === body)) {
+        imported.push({ id: newId(), title: haiku.title, body });
+      }
+    }
+    if (imported.length) {
+      setChapters((prev) => [...prev, ...imported]);
+      setActiveId(imported[0].id);
+    }
+    await refresh();
+    setBusy(`Imported ${imported.length} haiku${imported.length === 1 ? "" : "s"} into /journal/haiku` + (skipped ? ` · ${skipped} unreadable` : ""));
+    window.setTimeout(() => setBusy(null), 5000);
+  };
+
+  const onImportScans = async (list: FileList | null) => {
+    if (!list?.length) return;
+    setBusy(`Organizing ${list.length} journal scan${list.length === 1 ? "" : "s"}…`);
+    const imported: Chapter[] = [];
+    for (const file of Array.from(list)) {
+      if (!file.type.startsWith("image/")) continue;
+      if (files.some((entry) => entry.dir === "/journal/scans" && entry.name === file.name)) continue;
+      await vfs.add(file, {
+        dir: "/journal/scans",
+        caption: `Journal scan: ${file.name}`,
+      });
+      const title = `Journal scan — ${file.name.replace(/\.[^.]+$/, "")}`;
+      imported.push({
+        id: newId(),
+        title,
+        body: `Scan imported from ${file.name}.\\n\\n[[file:${file.name}]]\\n\\nTranscribe or edit the haiku here, then Pipe it to Inspector for a 5-7-5 check.`,
+      });
+    }
+    if (imported.length) {
+      setChapters((prev) => [...prev, ...imported]);
+      setActiveId(imported[0].id);
+    }
+    await refresh();
+    setBusy(`Organized ${imported.length} journal scan${imported.length === 1 ? "" : "s"} under /journal/scans`);
+    window.setTimeout(() => setBusy(null), 5000);
   };
 
   const onImportGenealogy = async () => {
@@ -416,6 +477,53 @@ export default function Book() {
                   className="rounded-lg bg-zinc-800 px-3 py-1.5 text-xs font-semibold text-zinc-100 transition hover:bg-zinc-700"
                 >
                   ⬆ Import vault JSON
+                </button>
+              </div>
+
+              <div className="border-t border-zinc-800 pt-3">
+                <p className="mb-1 text-xs font-semibold text-zinc-200">
+                  Journal &amp; haiku
+                </p>
+                <p className="mb-2 text-[11px] leading-relaxed text-zinc-500">
+                  Import plain text, Markdown, or JSON haiku. Each entry becomes
+                  an editable chapter, while the original file is organized under
+                  <code className="text-cyan-400"> /journal/haiku</code>.
+                  Use <code>title</code> and <code>lines</code> in JSON, or three
+                  poem lines in a text file.
+                </p>
+                <input
+                  ref={haikuInput}
+                  type="file"
+                  multiple
+                  accept=".txt,.md,.markdown,.json,text/plain,application/json"
+                  onChange={(e) => {
+                    void onImportHaiku(e.target.files);
+                    e.target.value = "";
+                  }}
+                  className="hidden"
+                />
+                <button
+                  onClick={() => haikuInput.current?.click()}
+                  className="rounded-lg bg-violet-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-violet-500"
+                >
+                  🍃 Import haiku to workbench
+                </button>
+                <input
+                  ref={scanInput}
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  onChange={(e) => {
+                    void onImportScans(e.target.files);
+                    e.target.value = "";
+                  }}
+                  className="hidden"
+                />
+                <button
+                  onClick={() => scanInput.current?.click()}
+                  className="ml-2 rounded-lg border border-violet-500/40 px-3 py-1.5 text-xs font-semibold text-violet-200 transition hover:bg-violet-500/15"
+                >
+                  📷 Organize journal scans
                 </button>
               </div>
 
